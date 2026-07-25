@@ -847,11 +847,11 @@ function moleculeCardHTML(mol, opts){
    ถ้าปล่อยว่างไว้ เกมยังเล่นได้ปกติทุกอย่าง เพียงแต่ไม่ส่งขึ้นชีต
    ══════════════════════════════════════════════════════════════════════ */
 const CFG = {
-  URL: "https://script.google.com/macros/s/AKfycbwtXnWne1UuFqlUs1ao_UPdUKhJSwWLOVvQHm28CO6B1E7jsfWJrMLzXmqK9wn4ar9Zsg/exec",                       // ← วาง URL ที่ลงท้ายด้วย /exec ตรงนี้
+  URL: "https://script.google.com/macros/s/AKfycbwtXnWne1UuFqlUs1ao_UPdUKhJSwWLOVvQHm28CO6B1E7jsfWJrMLzXmqK9wn4ar9Zsg/exec",
   TOKEN: "PTK-CHEM-2569",        // ต้องตรงกับค่า TOKEN ในไฟล์ Code.gs
   SHOW_BADGE: true,              // แสดงป้ายสถานะการส่งข้อมูลมุมจอ
   RETRY_MS: 20000,               // ความถี่ในการลองส่งซ้ำเมื่อเน็ตหลุด (มิลลิวินาที)
-  AUTO_SYNC: true                // ส่งข้อมูลอัตโนมัติเมื่อจบภารกิจ/ข้อ
+  AUTO_SYNC: true                // ส่งข้อมูลอัตโนมัติทันทีที่จบแต่ละข้อ
 };
 
 /* ============================================================
@@ -910,9 +910,10 @@ let STATE = {
   xp: 0,
   missions: {},        // { missionId: {stars} }
   detective: {         // free-detective mode, scored 0–10 per case
-    answered: 0,       // how many of the 30 have been attempted
+    answered: 0,       // how many of the round have been attempted
     correct: 0,
     scoreSum: 0,       // sum of 0–10 scores
+    timeSum: 0,        // total seconds spent across answered cases
     bestAvg: 0,        // best completed-round average
     roundsDone: 0
   },
@@ -920,15 +921,18 @@ let STATE = {
   createdAt: null
 };
 
-const DETECTIVE_ROUND_SIZE = 30;
+/* 20 cases per detective round, sampled from the full 30-molecule library —
+   the lab keeps all 30 to explore, the round stays a manageable sitting. */
+const DETECTIVE_ROUND_SIZE = 20;
 
 async function loadState(){
   const saved = await Store.get('profile');
   if(saved){ STATE = Object.assign(STATE, saved); }
   // migrate saves written by earlier versions
   if(!STATE.detective || typeof STATE.detective !== 'object'){
-    STATE.detective = {answered:0, correct:0, scoreSum:0, bestAvg:0, roundsDone:0};
+    STATE.detective = {answered:0, correct:0, scoreSum:0, timeSum:0, bestAvg:0, roundsDone:0};
   }
+  if(STATE.detective.timeSum === undefined) STATE.detective.timeSum = 0;
   if(!STATE.explored) STATE.explored = {};
   if(STATE.room === undefined) STATE.room = '';
   if(STATE.no === undefined) STATE.no = '';
@@ -985,12 +989,6 @@ const LOG = {
     }finally{
       this.sending = false;
     }
-  },
-  toCSV(){
-    const cols = ['ts','kind','name','room','no','xp','mol','formula','test','o2','reacts','soot','secs','mode','correct','tests','score10','mission','stars','avg10'];
-    const head = ['เวลา','ประเภท','ชื่อ','ห้อง','เลขที่','XP','สาร','สูตร','การทดสอบ','O2','เกิดปฏิกิริยา','เขม่า%','วินาที','โหมด','ถูก','จำนวนทดสอบ','คะแนน/10','ภารกิจ','ดาว','เฉลี่ย/10'];
-    const rows = [head].concat(this.log.map(r=>cols.map(c=>r[c]===undefined?'':r[c])));
-    return rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   }
 };
 
@@ -1307,6 +1305,7 @@ function startStation(cfg){
     combustionRuns: [],  // history of {o2Level, sootScore}
     testCount: 0,
     log: [],
+    t0: Date.now(),      // case clock — drives the average-time metric
     solved: false
   };
   return STATION;
@@ -1512,23 +1511,25 @@ function resolveAccusation(correct, afterAccuse){
      is final — the answer is revealed with its reasoning and play moves on. */
   if(STATION.cfg.noRetry){
     const score = caseScore10(correct, STATION.testCount);
+    const secs = +((Date.now() - STATION.t0)/1000).toFixed(1);
     STATION.solved = true;
     LOG.event('case', {
       mol: mol.id, formula: mol.formula, correct: correct?1:0,
-      tests: STATION.testCount, score10: score
+      tests: STATION.testCount, score10: score, secs: secs
     });
     openSheet(`
       <div class="sheet-handle"></div>
       <div class="center" style="font-size:40px;">${correct?'✅':'❌'}</div>
       <h2 class="section-title center" style="justify-content:center;">${correct?'ระบุถูกต้อง':'ระบุไม่ถูกต้อง'}</h2>
-      <div class="center" style="font-size:22px;font-weight:700;color:${correct?'var(--evidence)':'var(--acid)'};margin-bottom:4px;">${score}/10</div>
+      <div class="center" style="font-size:22px;font-weight:700;color:${correct?'var(--evidence)':'var(--acid)'};margin-bottom:2px;">${score}/10</div>
+      <div class="center tag" style="margin-bottom:6px;">ใช้เวลา ${secs.toFixed(1)} วินาที · ทดสอบ ${STATION.testCount} ครั้ง</div>
       ${moleculeCardHTML(mol,{size:120})}
       <div class="why-box mt12">${explainWhy(mol)}</div>
       <button class="btn btn-primary btn-block mt16" id="stationContinueBtn">ข้อถัดไป →</button>
     `);
     document.getElementById('stationContinueBtn').addEventListener('click', ()=>{
       closeSheet();
-      if(afterAccuse) afterAccuse(correct, score, STATION.testCount, mol);
+      if(afterAccuse) afterAccuse(correct, score, STATION.testCount, mol, secs);
     });
     return;
   }
@@ -1866,8 +1867,8 @@ function renderCaseMission(m){
    head), one attempt per case, scored 0–10 and reported as an average.
    ============================================================ */
 function buildDetectiveRound(){
-  // sample 30 cases from the 30 molecules: every molecule appears once,
-  // shuffled, so a round covers the whole space with no repeats
+  // sample DETECTIVE_ROUND_SIZE distinct molecules from the full library, so a
+  // round never repeats a case while the lab still offers all 30 to explore
   const ids = MOLECULES.map(x=>x.id);
   for(let i=ids.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
@@ -1879,10 +1880,11 @@ function buildDetectiveRound(){
 let DETECTIVE_ROUND = null;
 
 function startDetectiveRound(){
-  DETECTIVE_ROUND = { queue: buildDetectiveRound(), idx:0, scoreSum:0, correct:0 };
+  DETECTIVE_ROUND = { queue: buildDetectiveRound(), idx:0, scoreSum:0, correct:0, timeSum:0 };
   STATE.detective.answered = 0;
   STATE.detective.correct = 0;
   STATE.detective.scoreSum = 0;
+  STATE.detective.timeSum = 0;
   saveState();
   renderDetectiveCase();
 }
@@ -1895,23 +1897,29 @@ function renderDetectiveCase(){
   if(R.idx >= R.queue.length){ renderDetectiveSummary(); return; }
 
   const avgSoFar = R.idx>0 ? (R.scoreSum/R.idx) : 0;
+  const avgSecSoFar = R.idx>0 ? (R.timeSum/R.idx) : 0;
   startStation({
     mode:'detective', mystery:true, molId: R.queue[R.idx],
     noRetry:true, showEvidenceBoard:false,
     title:'โหมดนักสืบอิสระ',
-    subtitle:`ข้อ ${R.idx+1} / ${R.queue.length} · เฉลี่ย ${avgSoFar.toFixed(1)}/10`,
+    subtitle:`ข้อ ${R.idx+1} / ${R.queue.length} · เฉลี่ย ${avgSoFar.toFixed(1)}/10${R.idx>0?` · ${avgSecSoFar.toFixed(0)} วิ/ข้อ`:''}`,
     allowedTests:['combustion','br2dark','br2light','kmno4']
   });
   root.innerHTML = renderStation();
-  attachStationHandlers((correct, score10)=>{
+  attachStationHandlers((correct, score10, testsUsed, mol, secs)=>{
     R.scoreSum += score10;
+    R.timeSum += (secs||0);
     if(correct) R.correct++;
     R.idx++;
     STATE.detective.answered = R.idx;
     STATE.detective.correct = R.correct;
     STATE.detective.scoreSum = R.scoreSum;
+    STATE.detective.timeSum = R.timeSum;
     addXP(score10);
     saveState();
+    /* Push the running score to the sheet after every single case, so the
+       teacher's board reflects the class live rather than only at round end. */
+    submitSummary();
     renderDetectiveCase();
   });
 }
@@ -1919,6 +1927,7 @@ function renderDetectiveCase(){
 function renderDetectiveSummary(){
   const R = DETECTIVE_ROUND;
   const avg = R.scoreSum / R.queue.length;
+  const avgSec = R.timeSum / R.queue.length;
   const prevBest = STATE.detective.bestAvg || 0;
   const isBest = avg > prevBest;
   if(isBest) STATE.detective.bestAvg = avg;
@@ -1929,10 +1938,12 @@ function renderDetectiveSummary(){
   STATE.detective.answered = R.queue.length;
   STATE.detective.correct  = R.correct;
   STATE.detective.scoreSum = R.scoreSum;
+  STATE.detective.timeSum  = R.timeSum;
   addXP(Math.round(avg*5));
   saveState();
   LOG.event('detective_round', {
-    tests:R.queue.length, correct:R.correct, avg10:+avg.toFixed(2), score10:R.scoreSum
+    tests:R.queue.length, correct:R.correct, avg10:+avg.toFixed(2),
+    score10:R.scoreSum, avgSec:+avgSec.toFixed(1)
   });
   submitSummary();   // keep the teacher's summary sheet current without manual sync
   document.getElementById('screen-root').innerHTML = `
@@ -1945,7 +1956,7 @@ function renderDetectiveSummary(){
       <div class="hr"></div>
       <div class="grid2">
         <div class="chip">ตอบถูก<br><b style="color:var(--evidence);font-size:17px;">${R.correct}/${R.queue.length}</b></div>
-        <div class="chip">คะแนนรวม<br><b style="color:var(--gold);font-size:17px;">${R.scoreSum}</b></div>
+        <div class="chip">เวลาเฉลี่ย<br><b style="color:var(--gold);font-size:17px;">${avgSec.toFixed(0)} วิ/ข้อ</b></div>
       </div>
       <button class="btn btn-primary btn-block mt16" id="detAgainBtn">เริ่มรอบใหม่</button>
       <button class="btn btn-ghost btn-block mt8" id="detHomeBtn">กลับหน้าแรก</button>
@@ -1966,20 +1977,10 @@ function submitSummary(){
     correct: d.correct,
     tests: d.answered,
     avg10: d.answered ? +(d.scoreSum/d.answered).toFixed(2) : 0,
+    avgSec: d.answered ? +(d.timeSum/d.answered).toFixed(1) : 0,
     score10: d.bestAvg ? +d.bestAvg.toFixed(2) : 0
   });
   LOG.flush();
-}
-
-function exportCSV(){
-  const csv = LOG.toCSV();
-  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `hydrolab_${STATE.room||'x'}_${STATE.no||'x'}_${STATE.name||'player'}.csv`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 /* ============================================================
@@ -2124,8 +2125,6 @@ function renderProgressScreen(){
   const d = STATE.detective;
   const explored = Object.keys(STATE.explored).length;
   const exploreMax = MOLECULES.length*4;
-  const syncState = !CFG.URL ? 'บันทึกในเครื่องเท่านั้น'
-    : (LOG.queue.length ? 'รอส่ง '+LOG.queue.length+' รายการ' : 'ซิงก์ครบแล้ว');
   return `
     <h1 class="page-title">ความก้าวหน้า<small>${STATE.name} · ห้อง ${STATE.room} · เลขที่ ${STATE.no}</small></h1>
     <div class="grid2">
@@ -2138,7 +2137,11 @@ function renderProgressScreen(){
         <div class="chip">เฉลี่ยรอบล่าสุด<br><b style="color:var(--evidence);font-size:17px;">${d.answered? (d.scoreSum/d.answered).toFixed(1):'—'}/10</b></div>
         <div class="chip">สถิติดีที่สุด<br><b style="color:var(--gold);font-size:17px;">${d.bestAvg?d.bestAvg.toFixed(1):'—'}/10</b></div>
       </div>
-      <div class="tag mt8">เล่นจบแล้ว ${d.roundsDone||0} รอบ · ข้อที่ทำไปในรอบปัจจุบัน ${d.answered}/${DETECTIVE_ROUND_SIZE}</div>
+      <div class="grid2 mt8">
+        <div class="chip">เวลาเฉลี่ย<br><b style="color:var(--perm-2);font-size:17px;">${d.answered? (d.timeSum/d.answered).toFixed(0):'—'} วิ/ข้อ</b></div>
+        <div class="chip">ตอบถูก<br><b style="color:var(--evidence);font-size:17px;">${d.answered? d.correct+'/'+d.answered : '—'}</b></div>
+      </div>
+      <div class="tag mt8">เล่นจบแล้ว ${d.roundsDone||0} รอบ · รอบละ ${DETECTIVE_ROUND_SIZE} ข้อ</div>
     </div>
     <div class="card">
       <h2 class="section-title">⚗️ การสำรวจในห้องทดลอง</h2>
@@ -2148,28 +2151,12 @@ function renderProgressScreen(){
       <p class="mt8" style="margin-bottom:0;">ทดสอบสารแต่ละชนิดด้วยวิธีใหม่ที่ยังไม่เคยลอง จะได้ +3 XP ทุกครั้ง</p>
     </div>
     <div class="card">
-      <h2 class="section-title">📊 การบันทึกข้อมูล</h2>
-      <p>สถานะ: <b style="color:var(--text)">${syncState}</b></p>
-      <div class="grid2">
-        <button class="btn btn-ghost btn-sm" id="exportCsvBtn">Export CSV</button>
-        <button class="btn btn-primary btn-sm" id="syncNowBtn" ${CFG.URL?'':'disabled'}>ส่งข้อมูลตอนนี้</button>
-      </div>
-    </div>
-    <div class="card">
       <h2 class="section-title">🔄 เริ่มใหม่</h2>
       <p>ล้างความคืบหน้าทั้งหมดของ "${STATE.name}" บนอุปกรณ์นี้</p>
       <button class="btn btn-ghost btn-block" id="resetBtn" style="color:var(--acid);">ล้างข้อมูลทั้งหมด</button>
     </div>`;
 }
 function attachProgressHandlers(){
-  document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
-  const sy = document.getElementById('syncNowBtn');
-  if(sy) sy.addEventListener('click', async ()=>{
-    submitSummary();
-    await LOG.flush();
-    toast(LOG.queue.length ? 'ยังส่งไม่ครบ ระบบจะลองใหม่อัตโนมัติ' : 'ส่งข้อมูลเรียบร้อย ✓');
-    navigate('progress');
-  });
   document.getElementById('resetBtn').addEventListener('click', ()=>{
     openSheet(`<div class="sheet-handle"></div>
       <h2 class="section-title">ยืนยันการล้างข้อมูล?</h2>
@@ -2178,7 +2165,7 @@ function attachProgressHandlers(){
       <button class="btn btn-ghost btn-block mt8" id="cancelResetBtn">ยกเลิก</button>`);
     document.getElementById('confirmResetBtn').addEventListener('click', async ()=>{
       STATE = {name:'', room:'', no:'', xp:0, missions:{},
-        detective:{answered:0,correct:0,scoreSum:0,bestAvg:0,roundsDone:0},
+        detective:{answered:0,correct:0,scoreSum:0,timeSum:0,bestAvg:0,roundsDone:0},
         explored:{}, createdAt:null};
       await saveState();
       closeSheet();
