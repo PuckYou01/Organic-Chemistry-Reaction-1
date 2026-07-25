@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>นักสืบไฮโดรคาร์บอน | Hydrocarbon Sleuth Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS — "Night Lab / Forensic Chemistry" system
+   ============================================================ */
+:root{
+  --ink:#0A1420;
+  --ink-2:#0E1B2C;
+  --panel:#11213A;
+  --panel-2:#16294A;
+  --line: rgba(148,178,214,0.16);
+  --paper:#F4EFE4;
+  --paper-dim:#C9C2AE;
+  --flame:#FF7A29;
+  --flame-2:#FFC069;
+  --bromine:#C2410C;
+  --bromine-2:#F2A65A;
+  --perm:#9B3FD4;
+  --perm-2:#D9A8F5;
+  --evidence:#22D3B0;
+  --evidence-2:#0F766E;
+  --gold:#F2B705;
+  --acid:#E23D3D;
+  --text:#EAF1FB;
+  --text-dim:#93A6C2;
+  --text-dimmer:#5E7292;
+  --radius:16px;
+  --radius-sm:10px;
+  --shadow: 0 8px 30px rgba(0,0,0,0.45);
+  --font-display:'Chakra Petch', 'Sarabun', sans-serif;
+  --font-body:'Sarabun', 'Chakra Petch', sans-serif;
+}
+
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{
+  margin:0; padding:0; height:100%;
+  background:
+    radial-gradient(1200px 700px at 15% -10%, rgba(34,211,176,0.07), transparent 60%),
+    radial-gradient(900px 600px at 110% 10%, rgba(155,63,212,0.10), transparent 55%),
+    linear-gradient(180deg, var(--ink) 0%, #060D16 100%);
+  color:var(--text);
+  font-family:var(--font-body);
+  overflow:hidden;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(148,178,214,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,178,214,0.035) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(circle at 50% 20%, black, transparent 75%);
+}
+h1,h2,h3,h4,.mono,.formula,.xp,button{font-family:var(--font-display);}
+button{font-family:var(--font-display);}
+::-webkit-scrollbar{width:6px; height:6px;}
+::-webkit-scrollbar-thumb{background:var(--evidence-2); border-radius:4px;}
+
+#app{
+  position:relative; z-index:1;
+  max-width:520px; margin:0 auto;
+  height:100vh; height:100dvh;
+  display:flex; flex-direction:column;
+  background: linear-gradient(180deg, rgba(16,27,46,0.4), rgba(6,13,22,0.2));
+}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  flex:0 0 auto;
+  display:flex; align-items:center; gap:10px;
+  padding:12px 14px 10px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(17,33,58,0.9), rgba(17,33,58,0.55));
+  backdrop-filter: blur(6px);
+}
+.tb-badge{
+  width:38px;height:38px;border-radius:10px;
+  background:radial-gradient(circle at 30% 30%, var(--evidence), var(--evidence-2));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700; font-size:15px; color:#04231D; flex:0 0 auto;
+  box-shadow: 0 0 0 2px rgba(34,211,176,0.25), 0 4px 10px rgba(0,0,0,0.4);
+}
+.tb-info{flex:1; min-width:0;}
+.tb-name{font-size:14px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.tb-rank{font-size:11px; color:var(--evidence); letter-spacing:.03em;}
+.tb-right{display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex:0 0 auto;}
+.tb-xp{
+  display:flex; align-items:center; gap:5px;
+  font-size:12px; color:var(--gold); font-weight:600;
+  padding:5px 9px; border-radius:20px; background:rgba(242,183,5,0.10); border:1px solid rgba(242,183,5,0.25);
+  white-space:nowrap;
+}
+.sync-badge{
+  font-family:var(--font-body); font-size:9.5px; color:var(--text-dimmer);
+  padding:2px 7px; border-radius:20px; border:1px solid var(--text-dimmer);
+  white-space:nowrap; opacity:.85;
+}
+
+/* ---------- Screen container ---------- */
+.screen{
+  flex:1 1 auto; overflow-y:auto; overflow-x:hidden;
+  padding:14px 14px 90px;
+  -webkit-overflow-scrolling:touch;
+}
+.screen.hidden{display:none;}
+
+/* ---------- Bottom nav ---------- */
+.bottomnav{
+  position:absolute; left:0; right:0; bottom:0; z-index:5;
+  display:flex; justify-content:space-around;
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+  background:linear-gradient(0deg, rgba(6,13,22,0.97), rgba(6,13,22,0.85));
+  border-top:1px solid var(--line);
+  backdrop-filter: blur(8px);
+}
+.nav-btn{
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  background:none; border:none; color:var(--text-dimmer);
+  font-size:10.5px; padding:6px 4px; border-radius:10px; min-width:56px;
+  cursor:pointer; transition:color .15s, background .15s;
+}
+.nav-btn .ic{font-size:19px; line-height:1;}
+.nav-btn.active{color:var(--evidence); background:rgba(34,211,176,0.08);}
+
+/* ---------- Generic components ---------- */
+.card{
+  background:linear-gradient(180deg, var(--panel-2), var(--panel));
+  border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px; margin-bottom:12px; box-shadow:var(--shadow);
+}
+.card-tight{padding:12px;}
+h1.page-title{font-size:20px; margin:2px 0 14px; letter-spacing:.02em; color:var(--text);}
+h1.page-title small{display:block; font-family:var(--font-body); font-size:12.5px; color:var(--text-dim); font-weight:400; margin-top:3px;}
+h2.section-title{font-size:14px; color:var(--evidence); text-transform:uppercase; letter-spacing:.08em; margin:0 0 10px; display:flex; align-items:center; gap:6px;}
+p{line-height:1.6; font-size:14.5px; color:var(--text-dim); margin:0 0 8px;}
+.btn{
+  appearance:none; border:none; cursor:pointer;
+  border-radius:12px; padding:13px 18px; font-size:14.5px; font-weight:600;
+  min-height:46px; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  transition:transform .08s ease, filter .15s ease, opacity .15s;
+  letter-spacing:.01em;
+}
+.btn:active{transform:scale(0.97);}
+.btn:disabled{opacity:.35; cursor:not-allowed;}
+.btn-primary{background:linear-gradient(135deg, var(--evidence), var(--evidence-2)); color:#03231D; width:100%;}
+.btn-primary:not(:disabled):hover{filter:brightness(1.08);}
+.btn-ghost{background:rgba(148,178,214,0.08); color:var(--text); border:1px solid var(--line);}
+.btn-flame{background:linear-gradient(135deg, var(--flame), #C4470E); color:#2A0900;}
+.btn-bromine{background:linear-gradient(135deg, var(--bromine-2), var(--bromine)); color:#2A0900;}
+.btn-perm{background:linear-gradient(135deg, var(--perm-2), var(--perm)); color:#22012E;}
+.btn-block{width:100%;}
+.btn-sm{padding:9px 12px; min-height:38px; font-size:13px; border-radius:10px;}
+.pill{
+  display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px;
+  font-size:11.5px; font-weight:600; letter-spacing:.02em; border:1px solid transparent;
+}
+.pill-alkane{background:rgba(148,178,214,.12); color:#B9CBE6; border-color:rgba(148,178,214,.25);}
+.pill-unsat{background:rgba(255,122,41,.12); color:var(--flame-2); border-color:rgba(255,122,41,.3);}
+.pill-aromatic{background:rgba(155,63,212,.14); color:var(--perm-2); border-color:rgba(155,63,212,.32);}
+.pill-locked{background:rgba(94,114,146,.15); color:var(--text-dimmer);}
+.tag{font-size:10.5px; color:var(--text-dimmer); font-family:var(--font-body);}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.hr{height:1px; background:var(--line); margin:14px 0; border:none;}
+.chip{
+  padding:8px 12px; border-radius:10px; background:rgba(148,178,214,0.07); border:1px solid var(--line);
+  font-size:12.5px; color:var(--text-dim); text-align:center;
+}
+.badge-star{color:var(--gold); font-size:15px;}
+.hidden{display:none !important;}
+.center{text-align:center;}
+.mt8{margin-top:8px;} .mt12{margin-top:12px;} .mt16{margin-top:16px;}
+
+/* toast */
+#toast{
+  position:fixed; left:50%; bottom:96px; transform:translate(-50%,20px);
+  background:var(--panel-2); border:1px solid var(--evidence); color:var(--text);
+  padding:11px 18px; border-radius:12px; font-size:13.5px; z-index:50;
+  opacity:0; transition:opacity .25s, transform .25s; pointer-events:none;
+  box-shadow:var(--shadow); max-width:88%; text-align:center;
+}
+#toast.show{opacity:1; transform:translate(-50%,0);}
+
+/* modal sheet */
+.sheet-backdrop{
+  position:fixed; inset:0; background:rgba(3,8,14,0.72); z-index:40;
+  display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.sheet-backdrop.show{opacity:1; pointer-events:auto;}
+.sheet{
+  width:100%; max-width:520px; background:linear-gradient(180deg, var(--panel-2), var(--ink-2));
+  border-radius:20px 20px 0 0; border:1px solid var(--line); border-bottom:none;
+  padding:18px 16px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(16px); transition:transform .25s;
+  max-height:85vh; overflow-y:auto;
+}
+.sheet-backdrop.show .sheet{transform:translateY(0);}
+.sheet-handle{width:36px; height:4px; border-radius:3px; background:var(--line); margin:0 auto 14px;}
+
+/* ============================================================
+   MOLECULE STRUCTURE (skeletal SVG + condensed formula)
+   ============================================================ */
+.mol-card{
+  background:radial-gradient(120% 140% at 20% -10%, rgba(34,211,176,0.06), transparent 60%), var(--ink-2);
+  border:1px solid var(--line); border-radius:var(--radius-sm);
+  padding:10px; text-align:center;
+}
+.mol-svg-wrap{width:100%; display:flex; justify-content:center; align-items:center; min-height:96px;}
+.mol-name-th{font-size:15px; font-weight:600; color:var(--text); margin-top:6px;}
+.mol-name-en{font-size:11.5px; color:var(--text-dim); font-style:italic;}
+.mol-formula{font-size:13px; color:var(--evidence); margin-top:4px; letter-spacing:.02em;}
+.mol-condensed{font-size:12.5px; color:var(--paper-dim); margin-top:2px; word-break:break-all;}
+.skeletal-line{stroke:var(--paper); stroke-width:2.4; stroke-linecap:round; fill:none;}
+.skeletal-line.arom{stroke:var(--perm-2);}
+
+/* ============================================================
+   REACTION CHAMBER
+   ============================================================ */
+/* 3-row flex column: head / stage / foot.
+   The caption lives in its own row, so it can never sit on top of the
+   flame or beaker no matter how tall the scene grows. */
+.chamber{
+  position:relative; border-radius:var(--radius-sm);
+  background:linear-gradient(180deg, rgba(8,16,28,0.9), rgba(8,16,28,0.65));
+  border:1px solid var(--line);
+  display:flex; flex-direction:column;
+  overflow:hidden; margin-bottom:10px;
+}
+.chamber-head{
+  flex:0 0 auto; display:flex; align-items:center; gap:8px;
+  padding:8px 10px; border-bottom:1px solid rgba(148,178,214,0.08);
+}
+.chamber-label{
+  font-size:11px; color:var(--text-dimmer);
+  letter-spacing:.05em; text-transform:uppercase;
+}
+.chamber-timer{
+  font-family:var(--font-display); font-size:11.5px; color:var(--text-dimmer);
+  margin-left:auto; font-variant-numeric:tabular-nums; min-width:46px; text-align:right;
+}
+.chamber-timer.running{color:var(--gold);}
+.chamber-result-tag{
+  font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600; white-space:nowrap;
+}
+.chamber-stage{
+  flex:1 1 auto; min-height:186px; position:relative;
+  display:flex; align-items:flex-end; justify-content:center;
+  padding:10px 10px 6px; overflow:hidden;
+}
+.chamber-foot{
+  flex:0 0 auto; padding:9px 12px; min-height:38px;
+  border-top:1px solid rgba(148,178,214,0.08);
+  font-size:12.5px; color:var(--text-dim); text-align:center; line-height:1.5;
+}
+.time-note{color:var(--gold); font-family:var(--font-display); font-size:11.5px;}
+/* soot level meter shown under the flame, never over it */
+.soot-meter{display:flex; align-items:center; gap:7px; margin-top:7px;}
+.sm-label{font-size:10.5px; color:var(--text-dimmer); flex:0 0 auto;}
+.sm-track{flex:1 1 auto; height:6px; border-radius:4px; background:rgba(148,178,214,0.14); overflow:hidden;}
+.sm-fill{display:block; height:100%; border-radius:4px;
+  background:linear-gradient(90deg, #6FC6F5, var(--flame-2) 45%, #2b2b2b);
+  transition:width .5s ease;}
+.sm-val{font-family:var(--font-display); font-size:11px; color:var(--flame-2); flex:0 0 auto; min-width:32px; text-align:right;}
+/* --- flame/soot --- */
+.flame-scene{position:relative; width:120px; height:172px;}
+.flame-shape{
+  position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+  border-radius:50% 50% 50% 50% / 65% 65% 35% 35%;
+  filter:blur(0.3px);
+  animation:flick 0.55s ease-in-out infinite alternate;
+}
+/* dark, smoky flame tip — opacity scales with soot score so an incomplete
+   burn visibly blackens at the top the way a real luminous flame does */
+.soot-tip{
+  position:absolute; left:50%; transform:translateX(-50%);
+  width:26px; height:30px; border-radius:50% 50% 40% 40% / 70% 70% 30% 30%;
+  background:radial-gradient(circle at 50% 80%, rgba(40,36,34,0.9), rgba(20,18,16,0) 72%);
+  filter:blur(2px); z-index:2;
+  animation:flick 0.62s ease-in-out infinite alternate;
+}
+@keyframes flick{
+  0%{transform:translateX(-50%) scaleY(1) scaleX(1) rotate(-1.5deg);}
+  50%{transform:translateX(-50%) scaleY(1.06) scaleX(0.96) rotate(1deg);}
+  100%{transform:translateX(-50%) scaleY(0.94) scaleX(1.04) rotate(-0.5deg);}
+}
+.wick{
+  position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+  width:8px; height:14px; background:#2b2b2b; border-radius:2px 2px 0 0;
+}
+.soot-dot{
+  position:absolute; bottom:70px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #4a4a4a, #100f0d);
+  opacity:0; animation:rise 2.6s ease-in forwards;
+}
+.smoke-puff{
+  position:absolute; bottom:78px; border-radius:50%;
+  background:radial-gradient(circle at 40% 40%, rgba(160,160,160,0.55), rgba(70,70,70,0.05));
+  opacity:0; animation:riseSmoke 3s ease-out forwards;
+}
+@keyframes rise{
+  0%{opacity:0; transform:translateY(0) translateX(0) scale(0.6);}
+  12%{opacity:.95;}
+  100%{opacity:0; transform:translateY(-120px) translateX(var(--drift,10px)) scale(1);}
+}
+@keyframes riseSmoke{
+  0%{opacity:0; transform:translateY(0) translateX(0) scale(0.5);}
+  15%{opacity:.5;}
+  100%{opacity:0; transform:translateY(-140px) translateX(var(--drift,14px)) scale(2.4);}
+}
+
+/* --- beaker --- */
+.beaker-scene{width:96px; height:150px; position:relative; margin:0 auto;}
+.beaker-glass{
+  position:absolute; left:14px; right:14px; bottom:10px; top:26px;
+  border:2.5px solid rgba(200,220,240,0.55); border-top:none;
+  border-radius:0 0 14px 14px;
+  overflow:hidden;
+  background:rgba(200,220,240,0.03);
+}
+.beaker-liquid{
+  position:absolute; left:0; right:0; bottom:0; height:78%;
+  transition: background-color 0.5s ease, height .3s;
+}
+.beaker-neck{
+  position:absolute; left:30px; right:30px; top:0; height:26px;
+  border:2.5px solid rgba(200,220,240,0.55); border-bottom:none; border-radius:5px 5px 0 0;
+}
+.litmus{
+  position:absolute; top:-20px; left:50%; transform:translateX(-50%) rotate(-8deg);
+  width:9px; height:34px; border-radius:2px; background:#3B6BD9;
+  border:1px solid rgba(0,0,0,0.3); transition:background-color 1.4s ease;
+  box-shadow:0 2px 6px rgba(0,0,0,0.4);
+}
+.gas-wisp{
+  position:absolute; top:-8px; left:50%; width:3px; height:3px; border-radius:50%;
+  background:rgba(226,61,61,0.7); opacity:0; animation:wisp 1.8s ease-out infinite;
+}
+@keyframes wisp{
+  0%{opacity:0; transform:translate(-50%,0) scale(1);}
+  20%{opacity:.8;}
+  100%{opacity:0; transform:translate(calc(-50% + 6px),-38px) scale(2.6);}
+}
+.mno2-dot{
+  position:absolute; bottom:2px; width:4px; height:4px; border-radius:50%;
+  background:#5C3A20; opacity:0; animation:settle 1.6s ease-in forwards;
+}
+@keyframes settle{
+  0%{opacity:0; transform:translateY(-60px);}
+  60%{opacity:.9;}
+  100%{opacity:.85; transform:translateY(0);}
+}
+.bubble{
+  position:absolute; bottom:6px; width:5px; height:5px; border-radius:50%;
+  background:rgba(230,240,255,0.55); opacity:0; animation:bub 1.4s ease-in infinite;
+}
+@keyframes bub{
+  0%{opacity:0; transform:translateY(0) scale(0.6);}
+  20%{opacity:.85;}
+  100%{opacity:0; transform:translateY(-70px) scale(1.1);}
+}
+.no-react-shake{animation:shake .5s ease;}
+@keyframes shake{
+  0%,100%{transform:translateX(0);} 20%{transform:translateX(-4px);} 40%{transform:translateX(4px);}
+  60%{transform:translateX(-3px);} 80%{transform:translateX(3px);}
+}
+.chamber-caption{
+  position:absolute; bottom:8px; left:0; right:0; text-align:center; z-index:3;
+  font-size:12px; color:var(--text-dim); padding:0 10px;
+}
+
+/* ============================================================
+   TEST BUTTONS ROW
+   ============================================================ */
+.test-row{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px;}
+.test-btn{
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:10px 4px; border-radius:12px; border:1px solid var(--line);
+  background:rgba(148,178,214,0.06); color:var(--text-dim); cursor:pointer;
+  font-size:10.5px; font-weight:600; min-height:64px; justify-content:center;
+  transition:transform .1s, background .15s, border-color .15s;
+}
+.test-btn .ic{font-size:19px;}
+.test-btn:active{transform:scale(0.95);}
+.test-btn.done{border-color:var(--evidence); color:var(--evidence);}
+.test-btn:disabled{opacity:.32; cursor:not-allowed;}
+
+/* ============================================================
+   EVIDENCE BOARD
+   ============================================================ */
+.evidence-board{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+.suspect{
+  display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:12px;
+  border:1.5px solid var(--line); background:rgba(148,178,214,0.05); transition:all .25s;
+}
+.suspect .sname{flex:1; font-size:13.5px; font-weight:600;}
+.suspect .shint{font-size:10.5px; color:var(--text-dimmer); display:block; font-weight:400; margin-top:1px; font-family:var(--font-body);}
+.suspect .sicon{font-size:20px; width:26px; text-align:center;}
+.suspect.ruled-out{opacity:.35; text-decoration:line-through; border-color:transparent;}
+.suspect.possible{border-color:var(--evidence); background:rgba(34,211,176,0.07);}
+.evidence-log{margin-top:10px; display:flex; flex-direction:column; gap:6px;}
+.evidence-item{
+  display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-dim);
+  padding:7px 10px; border-radius:9px; background:rgba(148,178,214,0.05);
+}
+.why-toggle{
+  margin-top:8px; font-size:12px; color:var(--evidence); background:none; border:none;
+  cursor:pointer; text-decoration:underline; padding:4px 0;
+}
+.why-box{
+  margin-top:6px; padding:10px 12px; border-radius:10px; background:rgba(34,211,176,0.06);
+  border:1px solid rgba(34,211,176,0.22); font-size:12.5px; color:var(--text); line-height:1.55;
+}
+
+/* soot ranking drag */
+.rank-list{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
+.rank-item{
+  display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
+  background:rgba(148,178,214,0.07); border:1px solid var(--line); cursor:grab; user-select:none;
+}
+.rank-item .grip{color:var(--text-dimmer); font-size:16px;}
+.rank-item.dragging{opacity:.5;}
+.rank-item .rnum{
+  width:22px; height:22px; border-radius:6px; background:var(--evidence-2); color:#03231D;
+  display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex:0 0 auto;
+}
+
+/* slider */
+.o2-slider-wrap{margin-top:14px;}
+input[type=range]{
+  -webkit-appearance:none; width:100%; height:6px; border-radius:4px;
+  background:linear-gradient(90deg, #3B6BD9, var(--flame-2), var(--flame));
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:22px; height:22px; border-radius:50%;
+  background:var(--text); border:3px solid var(--evidence); cursor:pointer; margin-top:-8px;
+}
+input[type=range]::-moz-range-thumb{
+  width:22px; height:22px; border-radius:50%; background:var(--text); border:3px solid var(--evidence); cursor:pointer;
+}
+.slider-labels{display:flex; justify-content:space-between; font-size:11px; color:var(--text-dimmer); margin-top:4px;}
+
+/* mission list */
+.mission-item{
+  display:flex; align-items:center; gap:12px; padding:13px; border-radius:14px;
+  background:rgba(148,178,214,0.05); border:1px solid var(--line); margin-bottom:9px; cursor:pointer;
+}
+.mission-item.locked{opacity:.45; cursor:not-allowed;}
+.mission-num{
+  width:36px;height:36px;border-radius:10px; background:var(--panel); border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center; font-weight:700; font-size:14px; flex:0 0 auto; color:var(--text-dim);
+}
+.mission-item.complete .mission-num{background:var(--evidence); color:#03231D; border-color:var(--evidence);}
+.mission-body{flex:1;}
+.mission-title{font-size:14px; font-weight:600;}
+.mission-desc{font-size:11.5px; color:var(--text-dimmer); margin-top:2px;}
+.mission-stars{font-size:13px; color:var(--gold); min-width:52px; text-align:right;}
+
+/* profile entry */
+.hero-title{
+  font-size:26px; text-align:center; margin:10px 0 4px; letter-spacing:.02em;
+  background:linear-gradient(135deg, var(--evidence), var(--perm-2) 60%, var(--flame-2));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.hero-sub{text-align:center; color:var(--text-dim); font-size:13px; margin-bottom:20px;}
+input[type=text]{
+  width:100%; padding:13px 14px; border-radius:12px; border:1.5px solid var(--line);
+  background:rgba(148,178,214,0.06); color:var(--text); font-size:15px; font-family:var(--font-body);
+}
+input[type=text]:focus{outline:none; border-color:var(--evidence);}
+label.field-label{font-size:12px; color:var(--text-dim); display:block; margin:12px 0 6px; letter-spacing:.02em;}
+
+/* Detective vial */
+.vial-mystery{
+  font-size:44px; text-align:center; margin:6px 0;
+  filter:drop-shadow(0 0 14px rgba(34,211,176,0.35));
+}
+
+/* focus visibility */
+button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+  outline:2px solid var(--evidence); outline-offset:2px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .flame-shape, .soot-tip, .soot-dot, .smoke-puff, .gas-wisp, .mno2-dot, .bubble, .no-react-shake{animation:none !important;}
+}
+
+/* small screens */
+@media (max-width:360px){
+  .test-row{gap:6px;}
+  .test-btn{font-size:9.5px; padding:8px 2px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar" id="topbar" style="display:none;">
+    <div class="tb-badge" id="tbBadge">🧪</div>
+    <div class="tb-info">
+      <div class="tb-name" id="tbName">—</div>
+      <div class="tb-rank" id="tbRank">นักเรียนฝึกหัด</div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-xp"><span>⚡</span><span id="tbXp">0 XP</span></div>
+      <div class="sync-badge" id="syncBadge">บันทึกในเครื่อง</div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-root"></div>
+
+  <div class="bottomnav" id="bottomnav" style="display:none;">
+    <button class="nav-btn" data-nav="home"><span class="ic">🏠</span>หน้าแรก</button>
+    <button class="nav-btn" data-nav="lab"><span class="ic">⚗️</span>ห้องทดลอง</button>
+    <button class="nav-btn" data-nav="missions"><span class="ic">📋</span>ภารกิจ</button>
+    <button class="nav-btn" data-nav="detective"><span class="ic">🔍</span>คดี</button>
+    <button class="nav-btn" data-nav="progress"><span class="ic">📈</span>ความก้าวหน้า</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div class="sheet-backdrop" id="sheetBackdrop">
+  <div class="sheet" id="sheetBody"></div>
+</div>
+
+<script>
+/* ============================================================
+   1. MOLECULE DATA
+   Every entry verified against คู่มือครู เคมี 5 บทที่ 12 (กิจกรรม 12.6)
+   chain: bond orders between consecutive carbons (chain molecules)
+   ring:  {size, doubleEdge (index or null), aromatic (bool)}
+   branch:{label, atRingIndex} for toluene's methyl group
+   terminalTriple: for alkynes — affects KMnO4 product flavor text
+   hasAlkylChain: for aromatics — affects Br2-light reactivity
+   chRatio: carbons / hydrogens — drives soot/smoke visual intensity
+   ============================================================ */
+const MOLECULES = [
+  { id:'methane', th:'มีเทน', en:'methane', cls:'alkane',
+    formula:'CH4', condensed:'CH₄', chain:[], chRatio:1/4 },
+  { id:'ethane', th:'อีเทน', en:'ethane', cls:'alkane',
+    formula:'C2H6', condensed:'CH₃–CH₃', chain:[1], chRatio:2/6 },
+  { id:'propane', th:'โพรเพน', en:'propane', cls:'alkane',
+    formula:'C3H8', condensed:'CH₃–CH₂–CH₃', chain:[1,1], chRatio:3/8 },
+  { id:'butane', th:'บิวเทน', en:'butane', cls:'alkane',
+    formula:'C4H10', condensed:'CH₃–CH₂–CH₂–CH₃', chain:[1,1,1], chRatio:4/10 },
+  { id:'pentane', th:'เพนเทน', en:'pentane', cls:'alkane',
+    formula:'C5H12', condensed:'CH₃–CH₂–CH₂–CH₂–CH₃', chain:[1,1,1,1], chRatio:5/12 },
+  { id:'hexane', th:'เฮกเซน', en:'hexane', cls:'alkane',
+    formula:'C6H14', condensed:'CH₃–(CH₂)₄–CH₃', chain:[1,1,1,1,1], chRatio:6/14 },
+  { id:'cyclohexane', th:'ไซโคลเฮกเซน', en:'cyclohexane', cls:'alkane',
+    formula:'C6H12', condensed:'วงแหวนอิ่มตัว C6H12', ring:{size:6,doubleEdge:null,aromatic:false}, chRatio:6/12,
+    trap:'ring-satd' },
+  { id:'ethene', th:'เอทีน', en:'ethene (ethylene)', cls:'alkene',
+    formula:'C2H4', condensed:'CH₂=CH₂', chain:[2], chRatio:2/4 },
+  { id:'propene', th:'โพรพีน', en:'propene', cls:'alkene',
+    formula:'C3H6', condensed:'CH₂=CH–CH₃', chain:[2,1], chRatio:3/6,
+    trap:'pair-cyclopropane' },
+  { id:'butene1', th:'บิวท์-1-อีน', en:'but-1-ene', cls:'alkene',
+    formula:'C4H8', condensed:'CH₂=CH–CH₂–CH₃', chain:[2,1,1], chRatio:4/8 },
+  { id:'pentene1', th:'เพนท์-1-อีน', en:'pent-1-ene', cls:'alkene',
+    formula:'C5H10', condensed:'CH₂=CH–CH₂–CH₂–CH₃', chain:[2,1,1,1], chRatio:5/10 },
+  { id:'cyclopropane', th:'ไซโคลโพรเพน', en:'cyclopropane', cls:'alkane',
+    formula:'C3H6', condensed:'วงแหวนอิ่มตัว C3H6', ring:{size:3,doubleEdge:null,aromatic:false}, chRatio:3/6,
+    trap:'pair-propene' },
+  { id:'cyclohexene', th:'ไซโคลเฮกซีน', en:'cyclohexene', cls:'alkene',
+    formula:'C6H10', condensed:'วงแหวนมีพันธะคู่ C6H10', ring:{size:6,doubleEdge:0,aromatic:false}, chRatio:6/10 },
+  { id:'ethyne', th:'อีไทน์', en:'ethyne (acetylene)', cls:'alkyne',
+    formula:'C2H2', condensed:'CH≡CH', chain:[3], chRatio:2/2, terminalTriple:true },
+  { id:'propyne', th:'โพรไพน์', en:'propyne', cls:'alkyne',
+    formula:'C3H4', condensed:'CH≡C–CH₃', chain:[3,1], chRatio:3/4, terminalTriple:true },
+  { id:'pentyne1', th:'เพนท์-1-ไอน์', en:'pent-1-yne', cls:'alkyne',
+    formula:'C5H8', condensed:'CH≡C–CH₂–CH₂–CH₃', chain:[3,1,1,1], chRatio:5/8, terminalTriple:true },
+  { id:'hexyne2', th:'เฮกซ์-2-ไอน์', en:'hex-2-yne', cls:'alkyne',
+    formula:'C6H10', condensed:'CH₃–C≡C–CH₂–CH₂–CH₃', chain:[1,3,1,1,1], chRatio:6/10, terminalTriple:false },
+  { id:'benzene', th:'เบนซีน', en:'benzene', cls:'aromatic',
+    formula:'C6H6', condensed:'วงแหวนอะโรมาติก C6H6', ring:{size:6,doubleEdge:null,aromatic:true}, chRatio:6/6,
+    hasAlkylChain:false },
+  { id:'toluene', th:'โทลูอีน (เมทิลเบนซีน)', en:'toluene (methylbenzene)', cls:'aromatic',
+    formula:'C7H8', condensed:'C6H5–CH₃', ring:{size:6,doubleEdge:null,aromatic:true}, branches:[{label:'CH₃',atRingIndex:0}], chRatio:7/8,
+    hasAlkylChain:true, trap:'toluene-vs-alkane' },
+
+  /* ---- pool expansion: 11 additional molecules (total 30) ---- */
+  { id:'heptane', th:'เฮปเทน', en:'heptane', cls:'alkane',
+    formula:'C7H16', condensed:'CH₃–(CH₂)₅–CH₃', chain:[1,1,1,1,1,1], chRatio:7/16 },
+  { id:'octane', th:'ออกเทน', en:'octane', cls:'alkane',
+    formula:'C8H18', condensed:'CH₃–(CH₂)₆–CH₃', chain:[1,1,1,1,1,1,1], chRatio:8/18 },
+  { id:'cyclopentane', th:'ไซโคลเพนเทน', en:'cyclopentane', cls:'alkane',
+    formula:'C5H10', condensed:'วงแหวนอิ่มตัว C5H10', ring:{size:5,doubleEdge:null,aromatic:false}, chRatio:5/10,
+    trap:'ring-satd' },
+  { id:'butene2', th:'บิวท์-2-อีน', en:'but-2-ene', cls:'alkene',
+    formula:'C4H8', condensed:'CH₃–CH=CH–CH₃', chain:[1,2,1], chRatio:4/8 },
+  { id:'hexene1', th:'เฮกซ์-1-อีน', en:'hex-1-ene', cls:'alkene',
+    formula:'C6H12', condensed:'CH₂=CH–(CH₂)₃–CH₃', chain:[2,1,1,1,1], chRatio:6/12 },
+  { id:'cyclopentene', th:'ไซโคลเพนทีน', en:'cyclopentene', cls:'alkene',
+    formula:'C5H8', condensed:'วงแหวนมีพันธะคู่ C5H8', ring:{size:5,doubleEdge:0,aromatic:false}, chRatio:5/8 },
+  { id:'butyne1', th:'บิวท์-1-ไอน์', en:'but-1-yne', cls:'alkyne',
+    formula:'C4H6', condensed:'CH≡C–CH₂–CH₃', chain:[3,1,1], chRatio:4/6, terminalTriple:true },
+  { id:'butyne2', th:'บิวท์-2-ไอน์', en:'but-2-yne', cls:'alkyne',
+    formula:'C4H6', condensed:'CH₃–C≡C–CH₃', chain:[1,3,1], chRatio:4/6, terminalTriple:false },
+  { id:'hexyne1', th:'เฮกซ์-1-ไอน์', en:'hex-1-yne', cls:'alkyne',
+    formula:'C6H10', condensed:'CH≡C–(CH₂)₃–CH₃', chain:[3,1,1,1,1], chRatio:6/10, terminalTriple:true },
+  { id:'ethylbenzene', th:'เอทิลเบนซีน', en:'ethylbenzene', cls:'aromatic',
+    formula:'C8H10', condensed:'C6H5–CH₂CH₃', ring:{size:6,doubleEdge:null,aromatic:true}, branches:[{label:'C₂H₅',atRingIndex:0}], chRatio:8/10,
+    hasAlkylChain:true },
+  { id:'xylene', th:'ไซลีน (1,2-ไดเมทิลเบนซีน)', en:'o-xylene (1,2-dimethylbenzene)', cls:'aromatic',
+    formula:'C8H10', condensed:'C6H4(CH₃)₂', ring:{size:6,doubleEdge:null,aromatic:true}, branches:[{label:'CH₃',atRingIndex:0},{label:'CH₃',atRingIndex:1}], chRatio:8/10,
+    hasAlkylChain:true },
+];
+
+function getMolecule(id){ return MOLECULES.find(m=>m.id===id); }
+
+/* ============================================================
+   2. REACTION ENGINE
+   Every rule traceable to the teacher's guide decision table:
+   สารประกอบไฮโดรคาร์บอน -> แอลเคน / แอลคีนหรือแอลไคน์ / แอโรมาติก
+   via ฟอกจางสีโบรมีน(มืด,สว่าง) + ฟอกจางสีKMnO4
+   ============================================================ */
+function testCombustion(mol, o2Level){
+  // o2Level: 'low' | 'normal' | 'high' (default 'normal')
+  const mult = o2Level==='low' ? 1.8 : (o2Level==='high' ? 0.35 : 1.0);
+  const sootScore = Math.min(1, mol.chRatio * mult);
+  let label;
+  if(sootScore < 0.32) label = 'เผาไหม้สมบูรณ์เกือบทั้งหมด เขม่าน้อยมาก';
+  else if(sootScore < 0.55) label = 'มีเขม่าเล็กน้อยถึงปานกลาง';
+  else if(sootScore < 0.78) label = 'มีเขม่าและควันชัดเจน';
+  else label = 'เขม่าและควันดำหนาแน่นมาก';
+  return { sootScore, label, o2Level: o2Level||'normal' };
+}
+
+function testBr2Dark(mol){
+  const addition = (mol.cls==='alkene' || mol.cls==='alkyne');
+  return {
+    reacts: addition,
+    mechanism: addition ? 'addition' : 'none',
+    speed: addition ? 'instant' : 'none',
+    litmusRed: false
+  };
+}
+
+function testBr2Light(mol){
+  if(mol.cls==='alkene' || mol.cls==='alkyne'){
+    return { reacts:true, mechanism:'addition', speed:'instant', litmusRed:false };
+  }
+  if(mol.cls==='alkane'){
+    return { reacts:true, mechanism:'substitution', speed:'slow', litmusRed:true };
+  }
+  // aromatic
+  if(mol.hasAlkylChain){
+    return { reacts:true, mechanism:'substitution', speed:'slow', litmusRed:true, note:'เกิดที่หมู่แอลคิลข้างวง ไม่ใช่ที่วงเบนซีน' };
+  }
+  return { reacts:false, mechanism:'none', speed:'none', litmusRed:false };
+}
+
+function testKMnO4(mol){
+  const reacts = (mol.cls==='alkene' || mol.cls==='alkyne');
+  let product = null;
+  if(mol.cls==='alkene') product = 'ไดออล (diol)';
+  if(mol.cls==='alkyne') product = mol.terminalTriple ? 'เกลือคาร์บอกซิเลต + แก๊ส CO₂ (ฟองแก๊ส)' : 'ไดคีโทน (diketone)';
+  return { reacts, product, bubbles: !!(mol.cls==='alkyne' && mol.terminalTriple) };
+}
+
+function runTest(mol, testType, opts){
+  opts = opts || {};
+  switch(testType){
+    case 'combustion': return testCombustion(mol, opts.o2Level);
+    case 'br2dark': return testBr2Dark(mol);
+    case 'br2light': return testBr2Light(mol);
+    case 'kmno4': return testKMnO4(mol);
+    default: throw new Error('unknown test '+testType);
+  }
+}
+
+/* ============================================================
+   3. DEDUCTION ENGINE — for the evidence board
+   Categorical tests (br2dark/br2light/kmno4) hard-eliminate classes.
+   Combustion soot is supporting evidence only (shown as a hint,
+   not a hard eliminator) because soot ranges genuinely overlap
+   between classes — this is intentional: it forces the player to
+   reason with combustion as corroborating evidence rather than a
+   shortcut, exactly the toluene-vs-alkane ambiguity the curriculum
+   itself relies on combustion to resolve.
+   ============================================================ */
+const CLASS_LABELS = {
+  alkane: 'แอลเคน',
+  unsat: 'แอลคีน หรือ แอลไคน์',
+  aromatic: 'แอโรมาติกไฮโดรคาร์บอน'
+};
+
+// Expected categorical pattern per class, used to check consistency
+function expectedPattern(cls, testType){
+  if(testType==='br2dark'){
+    return cls==='unsat' ? true : false;
+  }
+  if(testType==='kmno4'){
+    return cls==='unsat' ? true : false;
+  }
+  if(testType==='br2light'){
+    if(cls==='unsat') return true;      // reacts (addition)
+    if(cls==='alkane') return true;     // reacts (substitution)
+    if(cls==='aromatic') return 'maybe'; // depends on alkyl chain — genuinely ambiguous
+  }
+  return null;
+}
+
+function isConsistent(cls, evidence){
+  // evidence: {br2dark:{reacts}, br2light:{reacts}, kmno4:{reacts}} — only present keys checked
+  if(evidence.br2dark){
+    if(expectedPattern(cls,'br2dark') !== evidence.br2dark.reacts) return false;
+  }
+  if(evidence.kmno4){
+    if(expectedPattern(cls,'kmno4') !== evidence.kmno4.reacts) return false;
+  }
+  if(evidence.br2light){
+    const exp = expectedPattern(cls,'br2light');
+    if(exp!=='maybe' && exp !== evidence.br2light.reacts) return false;
+    // aromatic 'maybe' is never hard-ruled-out by br2light alone
+  }
+  return true;
+}
+
+function molClassGroup(mol){
+  if(mol.cls==='alkene' || mol.cls==='alkyne') return 'unsat';
+  return mol.cls; // 'alkane' | 'aromatic'
+}
+/* ============================================================
+   4. SKELETAL STRUCTURE RENDERER (SVG, generated from data)
+   ============================================================ */
+function moleculeSVG(mol, size){
+  size = size || 150;
+  const W = 200, H = 110;
+  let inner = '';
+
+  if(mol.ring){
+    inner = renderRing(mol, W, H);
+  } else if(mol.chain.length === 0){
+    // methane — single vertex with 4 implicit H, show as dot + label
+    inner = `<circle cx="${W/2}" cy="${H/2}" r="4" fill="var(--paper)"/>`;
+  } else {
+    inner = renderChain(mol, W, H);
+  }
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="${size}" height="${size*H/W}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+}
+
+function renderChain(mol, W, H){
+  const n = mol.chain.length + 1; // carbon count
+  const marginX = 22;
+  const spanX = W - marginX*2;
+  const stepX = n>1 ? spanX/(n-1) : 0;
+  const midY = H/2;
+  const amp = 22;
+  const pts = [];
+  for(let i=0;i<n;i++){
+    const x = marginX + stepX*i;
+    const y = midY + (i%2===0 ? amp/2 : -amp/2);
+    pts.push({x,y});
+  }
+  let svg = '';
+  for(let i=0;i<mol.chain.length;i++){
+    const a = pts[i], b = pts[i+1];
+    const order = mol.chain[i];
+    svg += bondSVG(a,b,order,false);
+  }
+  // terminal end caps (small stub to suggest continuing bond to H, subtle)
+  return svg;
+}
+
+function renderRing(mol, W, H){
+  const size = mol.ring.size;
+  const cx = W/2, cy = H/2 + 4;
+  const r = 30;
+  const pts = [];
+  for(let i=0;i<size;i++){
+    const angle = -Math.PI/2 + i*(2*Math.PI/size);
+    pts.push({x:cx + r*Math.cos(angle), y:cy + r*Math.sin(angle)});
+  }
+  let svg = '';
+  for(let i=0;i<size;i++){
+    const a = pts[i], b = pts[(i+1)%size];
+    let order = 1;
+    if(!mol.ring.aromatic && mol.ring.doubleEdge===i) order = 2;
+    svg += bondSVG(a,b,order,mol.ring.aromatic);
+  }
+  if(mol.ring.aromatic){
+    svg += `<circle cx="${cx}" cy="${cy}" r="${r*0.55}" class="skeletal-line arom" stroke-width="2" fill="none"/>`;
+  }
+  const branches = mol.branches || (mol.branch ? [mol.branch] : []);
+  branches.forEach(br=>{
+    const a = pts[br.atRingIndex];
+    const dir = {x:a.x-cx, y:a.y-cy};
+    const len = Math.hypot(dir.x,dir.y) || 1;
+    const bx = a.x + (dir.x/len)*24, by = a.y + (dir.y/len)*24;
+    svg += bondSVG(a,{x:bx,y:by},1,false);
+    svg += `<text x="${bx + (dir.x/len)*12}" y="${by + (dir.y/len)*12 + 4}" fill="var(--paper)" font-size="11" font-family="Chakra Petch, sans-serif" text-anchor="middle">${br.label}</text>`;
+  });
+  return svg;
+}
+
+function bondSVG(a,b,order,aromatic){
+  const cls = aromatic ? 'skeletal-line arom' : 'skeletal-line';
+  if(order===1){
+    return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="${cls}"/>`;
+  }
+  // offset perpendicular for double/triple parallel lines
+  const dx = b.x-a.x, dy = b.y-a.y;
+  const len = Math.hypot(dx,dy) || 1;
+  const px = -dy/len, py = dx/len;
+  const off = 4;
+  const shrink = 0.14; // shorten inner lines slightly
+  const ax2 = a.x+dx*shrink, ay2=a.y+dy*shrink, bx2=b.x-dx*shrink, by2=b.y-dy*shrink;
+  let svg = `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="${cls}"/>`;
+  if(order===2){
+    svg += `<line x1="${ax2+px*off}" y1="${ay2+py*off}" x2="${bx2+px*off}" y2="${by2+py*off}" class="${cls}"/>`;
+  } else if(order===3){
+    svg += `<line x1="${ax2+px*off}" y1="${ay2+py*off}" x2="${bx2+px*off}" y2="${by2+py*off}" class="${cls}"/>`;
+    svg += `<line x1="${ax2-px*off}" y1="${ay2-py*off}" x2="${bx2-px*off}" y2="${by2-py*off}" class="${cls}"/>`;
+  }
+  return svg;
+}
+
+function moleculeCardHTML(mol, opts){
+  opts = opts || {};
+  const hideName = opts.mystery;
+  return `
+    <div class="mol-card">
+      <div class="mol-svg-wrap">${moleculeSVG(mol, opts.size||150)}</div>
+      ${hideName ? '' : `
+        <div class="mol-name-th">${mol.th}</div>
+        <div class="mol-name-en">${mol.en}</div>
+        <div class="mol-formula">${mol.formula}</div>
+        <div class="mol-condensed">${mol.condensed}</div>
+      `}
+    </div>`;
+}
+/* ══════════════════════════════════════════════════════════════════════
+   ★★★ ตั้งค่าสำหรับครู — แก้เฉพาะบล็อกนี้บล็อกเดียว ★★★
+   วาง Web App URL ที่ได้จากการ deploy Google Apps Script ลงในช่อง URL
+   (ดูขั้นตอนในไฟล์ "วิธีติดตั้ง Google Sheet.md")
+   เมื่อใส่แล้ว นักเรียนไม่ต้องตั้งค่าอะไรอีก ระบบจะส่งข้อมูลให้อัตโนมัติ
+   ถ้าปล่อยว่างไว้ เกมยังเล่นได้ปกติทุกอย่าง เพียงแต่ไม่ส่งขึ้นชีต
+   ══════════════════════════════════════════════════════════════════════ */
+const CFG = {
+  URL: "",                       // ← วาง URL ที่ลงท้ายด้วย /exec ตรงนี้
+  TOKEN: "PTK-CHEM-2569",        // ต้องตรงกับค่า TOKEN ในไฟล์ Code.gs
+  SHOW_BADGE: true,              // แสดงป้ายสถานะการส่งข้อมูลมุมจอ
+  RETRY_MS: 20000,               // ความถี่ในการลองส่งซ้ำเมื่อเน็ตหลุด (มิลลิวินาที)
+  AUTO_SYNC: true                // ส่งข้อมูลอัตโนมัติเมื่อจบภารกิจ/ข้อ
+};
+
+/* ============================================================
+   5. STORAGE — tiered fallback (this file is distributed as a
+   standalone HTML file for students to open in their own browser,
+   so localStorage is the correct primary mechanism here; window.storage
+   is used opportunistically when previewed inside a Claude.ai artifact.)
+   ============================================================ */
+const Store = {
+  mem: {},
+  async get(key){
+    try{
+      if(typeof window!== 'undefined' && window.storage && window.storage.get){
+        const r = await window.storage.get(key, false);
+        if(r) return JSON.parse(r.value);
+      }
+    }catch(e){/* fall through */}
+    try{
+      const v = localStorage.getItem('hydrolab:'+key);
+      if(v) return JSON.parse(v);
+    }catch(e){/* fall through */}
+    return this.mem[key] || null;
+  },
+  async set(key, value){
+    this.mem[key] = value;
+    const json = JSON.stringify(value);
+    try{
+      if(typeof window!== 'undefined' && window.storage && window.storage.set){
+        await window.storage.set(key, json, false);
+      }
+    }catch(e){/* ignore */}
+    try{ localStorage.setItem('hydrolab:'+key, json); }catch(e){/* ignore, private mode etc */}
+  }
+};
+
+/* ============================================================
+   6. GAME STATE / PROFILE
+   ============================================================ */
+const RANKS = [
+  {min:0, th:'นักเรียนฝึกหัด'},
+  {min:80, th:'ผู้ช่วยนักสืบ'},
+  {min:200, th:'นักสืบไฮโดรคาร์บอน'},
+  {min:400, th:'นักสืบอาวุโส'},
+  {min:700, th:'ผู้เชี่ยวชาญไฮโดรคาร์บอน'}
+];
+function rankForXP(xp){
+  let r = RANKS[0].th;
+  for(const item of RANKS){ if(xp>=item.min) r=item.th; }
+  return r;
+}
+
+let STATE = {
+  name: '',
+  room: '',            // ห้อง
+  no: '',              // เลขที่
+  xp: 0,
+  missions: {},        // { missionId: {stars} }
+  detective: {         // free-detective mode, scored 0–10 per case
+    answered: 0,       // how many of the 30 have been attempted
+    correct: 0,
+    scoreSum: 0,       // sum of 0–10 scores
+    bestAvg: 0,        // best completed-round average
+    roundsDone: 0
+  },
+  explored: {},        // { "molId:testType": 1 } — drives free-lab XP
+  createdAt: null
+};
+
+const DETECTIVE_ROUND_SIZE = 30;
+
+async function loadState(){
+  const saved = await Store.get('profile');
+  if(saved){ STATE = Object.assign(STATE, saved); }
+  // migrate saves written by earlier versions
+  if(!STATE.detective || typeof STATE.detective !== 'object'){
+    STATE.detective = {answered:0, correct:0, scoreSum:0, bestAvg:0, roundsDone:0};
+  }
+  if(!STATE.explored) STATE.explored = {};
+  if(STATE.room === undefined) STATE.room = '';
+  if(STATE.no === undefined) STATE.no = '';
+  return STATE;
+}
+
+/* ============================================================
+   6b. LOG — item-level event log with an offline queue.
+   Every test and every answer is recorded locally first, then flushed to
+   the sheet when the network allows, so a dropped connection in a school
+   lab never costs the teacher a student's data.
+   ============================================================ */
+const LOG = {
+  queue: [],
+  log: [],
+  sending: false,
+  async load(){
+    this.queue = (await Store.get('syncQueue')) || [];
+    this.log   = (await Store.get('eventLog')) || [];
+  },
+  async persist(){
+    await Store.set('syncQueue', this.queue.slice(-400));
+    await Store.set('eventLog', this.log.slice(-400));
+  },
+  event(kind, data){
+    const row = Object.assign({
+      kind,
+      name: STATE.name, room: STATE.room, no: STATE.no,
+      xp: STATE.xp,
+      ts: new Date().toISOString()
+    }, data);
+    this.log.push(row);
+    this.queue.push(row);
+    this.persist();
+    if(CFG.AUTO_SYNC) this.flush();
+  },
+  async flush(){
+    if(this.sending || !CFG.URL || this.queue.length===0) return;
+    this.sending = true;
+    setBadge('sending');
+    const batch = this.queue.slice(0, 50);
+    try{
+      // text/plain avoids a CORS preflight that Apps Script cannot answer
+      await fetch(CFG.URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({token: CFG.TOKEN, rows: batch})
+      });
+      this.queue = this.queue.slice(batch.length);
+      await this.persist();
+      setBadge(this.queue.length ? 'pending' : 'ok');
+    }catch(e){
+      setBadge('offline');
+    }finally{
+      this.sending = false;
+    }
+  },
+  toCSV(){
+    const cols = ['ts','kind','name','room','no','xp','mol','formula','test','o2','reacts','soot','secs','mode','correct','tests','score10','mission','stars','avg10'];
+    const head = ['เวลา','ประเภท','ชื่อ','ห้อง','เลขที่','XP','สาร','สูตร','การทดสอบ','O2','เกิดปฏิกิริยา','เขม่า%','วินาที','โหมด','ถูก','จำนวนทดสอบ','คะแนน/10','ภารกิจ','ดาว','เฉลี่ย/10'];
+    const rows = [head].concat(this.log.map(r=>cols.map(c=>r[c]===undefined?'':r[c])));
+    return rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  }
+};
+
+function setBadge(status){
+  if(!CFG.SHOW_BADGE) return;
+  const el = document.getElementById('syncBadge');
+  if(!el) return;
+  const map = {
+    ok:      {t:'ซิงก์แล้ว', c:'var(--evidence)'},
+    sending: {t:'กำลังส่ง…', c:'var(--gold)'},
+    pending: {t:'รอส่ง '+LOG.queue.length, c:'var(--gold)'},
+    offline: {t:'ออฟไลน์ '+LOG.queue.length, c:'var(--acid)'},
+    off:     {t:'บันทึกในเครื่อง', c:'var(--text-dimmer)'}
+  };
+  const m = map[status] || map.off;
+  el.textContent = m.t;
+  el.style.color = m.c;
+  el.style.borderColor = m.c;
+}
+async function saveState(){
+  await Store.set('profile', STATE);
+}
+function addXP(n){
+  STATE.xp += n;
+  saveState();
+}
+
+/* ============================================================
+   7. TOAST / SHEET HELPERS
+   ============================================================ */
+let toastTimer=null;
+function toast(msg, ms){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), ms||2200);
+}
+
+function openSheet(html){
+  document.getElementById('sheetBody').innerHTML = html;
+  document.getElementById('sheetBackdrop').classList.add('show');
+}
+function closeSheet(){
+  document.getElementById('sheetBackdrop').classList.remove('show');
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('sheetBackdrop').addEventListener('click', (e)=>{
+    if(e.target.id==='sheetBackdrop') closeSheet();
+  });
+});
+
+function safeScrollIntoView(el){
+  try{ if(el && typeof el.scrollIntoView==='function') el.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+  catch(e){ /* not supported in this environment — non-critical */ }
+}
+
+function updateTopbar(){
+  document.getElementById('tbName').textContent = STATE.name || 'นักสืบ';
+  document.getElementById('tbRank').textContent = rankForXP(STATE.xp);
+  document.getElementById('tbXp').textContent = STATE.xp + ' XP';
+  const initials = (STATE.name||'?').trim().slice(0,1).toUpperCase() || '🧪';
+  document.getElementById('tbBadge').textContent = initials;
+}
+/* ============================================================
+   8. REACTION CHAMBER — reusable animated component
+   Layout is a strict 3-row flex column (head / stage / foot) so
+   captions can never overlap the artwork, regardless of scene height.
+   ============================================================ */
+const TEST_META = {
+  combustion: {label:'เผาไหม้', icon:'🔥', short:'จุดไฟ', cls:'btn-flame'},
+  br2dark:    {label:'Br₂ (ที่มืด)', icon:'🌑', short:'Br₂ มืด', cls:'btn-bromine'},
+  br2light:   {label:'Br₂ (ที่สว่าง)', icon:'☀️', short:'Br₂ สว่าง', cls:'btn-bromine'},
+  kmno4:      {label:'KMnO₄', icon:'🟣', short:'ด่างทับทิม', cls:'btn-perm'}
+};
+
+/* Reaction durations are deliberately far apart so the difference is
+   observable by eye, and a live stopwatch makes it measurable. */
+const RXN_MS = { instant: 700, slow: 5200 };
+
+function chamberShellHTML(id){
+  return `<div class="chamber" id="${id}">
+    <div class="chamber-head">
+      <span class="chamber-label">ห้องปฏิกิริยา</span>
+      <span class="chamber-timer" id="${id}-timer"></span>
+    </div>
+    <div class="chamber-stage" id="${id}-stage"></div>
+    <div class="chamber-foot" id="${id}-cap">แตะปุ่มทดสอบด้านล่างเพื่อเริ่มการทดลอง</div>
+  </div>`;
+}
+
+function reduceMotion(){
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/* Live stopwatch so slow vs. instant colour change is measurable, not just felt */
+function startTimer(elId){
+  const el = document.getElementById(elId);
+  if(!el) return {stop:()=>0};
+  const t0 = Date.now();
+  el.textContent = '0.0 วิ';
+  el.classList.add('running');
+  const iv = setInterval(()=>{
+    if(!el.isConnected){ clearInterval(iv); return; }
+    el.textContent = ((Date.now()-t0)/1000).toFixed(1)+' วิ';
+  }, 100);
+  return {
+    stop(){
+      clearInterval(iv);
+      const s = (Date.now()-t0)/1000;
+      if(el.isConnected){ el.textContent = s.toFixed(1)+' วิ'; el.classList.remove('running'); }
+      return s;
+    }
+  };
+}
+
+function playTest(chamberId, mol, testType, opts, onDone){
+  const chamber = document.getElementById(chamberId);
+  if(!chamber) return;
+  opts = opts || {};
+  const o2Note = (testType==='combustion' && opts.o2Level)
+    ? ' · O₂ ' + (opts.o2Level==='low'?'น้อย':opts.o2Level==='high'?'มาก':'ปกติ') : '';
+  chamber.innerHTML = `
+    <div class="chamber-head">
+      <span class="chamber-label">${TEST_META[testType].label}${o2Note}</span>
+      <span class="chamber-timer" id="${chamberId}-timer"></span>
+      <span class="chamber-result-tag" id="${chamberId}-tag"></span>
+    </div>
+    <div class="chamber-stage" id="${chamberId}-stage"></div>
+    <div class="chamber-foot" id="${chamberId}-cap">กำลังดำเนินการ…</div>`;
+  const stage = document.getElementById(chamberId+'-stage');
+  const cap = document.getElementById(chamberId+'-cap');
+  const tag = document.getElementById(chamberId+'-tag');
+  const rm = reduceMotion();
+
+  /* ---------------- COMBUSTION ---------------- */
+  if(testType==='combustion'){
+    const result = runTest(mol, 'combustion', opts);
+    const s = result.sootScore;
+
+    /* The flame itself encodes the chemistry: a clean burn is small, blue and
+       steady; a sooty burn is tall, luminous yellow-orange with a dark smoking
+       tip. Students read the soot level off the flame before any text appears. */
+    const coreCol   = s < 0.35 ? '#CFF3FF' : '#FFF3C4';
+    const midCol    = s < 0.35 ? '#6FC6F5' : 'var(--flame-2)';
+    const outerCol  = s < 0.35 ? '#2E7BC4' : 'var(--flame)';
+    const edgeCol   = s < 0.35 ? '#14477F' : '#B23A0C';
+    const flameH    = Math.round(58 + s*38);
+    const flameW    = Math.round(38 + s*16);
+    const glow      = s < 0.35 ? 'rgba(70,160,235,0.40)' : 'rgba(255,122,41,0.55)';
+
+    stage.innerHTML = `
+      <div class="flame-scene">
+        <div class="soot-tip" style="opacity:${(s*0.85).toFixed(2)}; bottom:${8+flameH-14}px;"></div>
+        <div class="flame-shape" style="
+          width:${flameW}px; height:${flameH}px;
+          background:radial-gradient(circle at 50% 100%, ${coreCol} 0%, ${midCol} 30%, ${outerCol} 62%, ${edgeCol} 100%);
+          box-shadow:0 0 ${Math.round(20+s*22)}px ${Math.round(5+s*7)}px ${glow};"></div>
+        <div class="wick"></div>
+      </div>`;
+
+    const sootMeterHTML = (pct)=>`
+      <div class="soot-meter" aria-label="ระดับเขม่า ${pct} เปอร์เซ็นต์">
+        <span class="sm-label">เขม่า</span>
+        <span class="sm-track"><span class="sm-fill" style="width:${pct}%;"></span></span>
+        <span class="sm-val">${pct}%</span>
+      </div>`;
+
+    tag.textContent = 'กำลังเผา…';
+    tag.style.background = 'rgba(255,122,41,0.18)'; tag.style.color = 'var(--flame-2)';
+    const timer = startTimer(chamberId+'-timer');
+    const fscene = stage.querySelector('.flame-scene');
+
+    /* Particle count and darkness both scale with soot score, so a clean burn
+       emits a few pale wisps and a dirty burn emits a dense black plume. */
+    const dotCount = rm ? 0 : Math.round(3 + s*26);
+    for(let i=0;i<dotCount;i++){
+      setTimeout(()=>{
+        if(!fscene || !fscene.isConnected) return;
+        const isSoot = Math.random() < (0.25 + s*0.65);
+        const el = document.createElement('div');
+        el.className = isSoot ? 'soot-dot' : 'smoke-puff';
+        const size = isSoot ? (3+Math.random()*3+s*3) : (6+Math.random()*8);
+        el.style.width = size+'px'; el.style.height = size+'px';
+        el.style.left = (48 + (Math.random()*22-11))+'px';
+        el.style.bottom = (flameH+4)+'px';
+        el.style.setProperty('--drift', (Math.random()*44-22)+'px');
+        /* darkness (not opacity) carries the soot level — the keyframe animates
+           opacity, so an inline opacity would simply be ignored */
+        if(isSoot){
+          const shade = Math.round(90 - s*70);
+          el.style.background = `radial-gradient(circle at 35% 30%, rgb(${shade+30},${shade+30},${shade+30}), rgb(${Math.max(6,shade-40)},${Math.max(5,shade-42)},${Math.max(4,shade-44)}))`;
+        }
+        fscene.appendChild(el);
+        setTimeout(()=>el.remove(), 3400);
+      }, i*100);
+    }
+
+    setTimeout(()=>{
+      const secs = timer.stop();
+      tag.textContent = 'เสร็จสิ้น';
+      tag.style.background='rgba(34,211,176,0.15)'; tag.style.color='var(--evidence)';
+      cap.innerHTML = `${result.label}${sootMeterHTML(Math.round(s*100))}`;
+      result.seconds = secs;
+      if(onDone) onDone(result);
+    }, rm ? 250 : Math.min(2900, dotCount*100+600));
+    return;
+  }
+
+  /* ---------------- Br₂ / KMnO₄ (beaker) ---------------- */
+  const isPerm = testType==='kmno4';
+  const reagentColor = isPerm ? '#7B2D8E' : '#B8541E';
+  const result = runTest(mol, testType);
+
+  stage.innerHTML = `
+    <div class="beaker-scene">
+      ${testType==='br2light' ? '<div class="litmus" id="'+chamberId+'-litmus"></div>' : ''}
+      <div class="beaker-neck"></div>
+      <div class="beaker-glass"><div class="beaker-liquid" id="${chamberId}-liq" style="background:${reagentColor};"></div></div>
+    </div>`;
+  tag.textContent = 'กำลังหยด…';
+  tag.style.background='rgba(148,178,214,0.15)'; tag.style.color='var(--text-dim)';
+  const liq = document.getElementById(chamberId+'-liq');
+  const beakerScene = stage.querySelector('.beaker-scene');
+
+  const dur = result.reacts ? (rm ? 200 : RXN_MS[result.speed]) : 0;
+  const timer = startTimer(chamberId+'-timer');
+
+  setTimeout(()=>{
+    if(result.reacts){
+      /* linear easing: the colour drains at a visibly constant rate, so a
+         5-second substitution reads as unmistakably slower than a 0.7-second
+         addition rather than both snapping at the end */
+      liq.style.transition = `background-color ${dur}ms linear`;
+      liq.style.background = isPerm ? '#8a6a4a' : 'rgba(184,84,30,0)';
+      cap.textContent = result.speed==='slow'
+        ? 'สังเกตดูสีที่ค่อย ๆ จางลงอย่างช้า ๆ …'
+        : 'สีจางหายแทบจะทันที!';
+      if(isPerm && !rm){
+        const glass = beakerScene.querySelector('.beaker-glass');
+        for(let i=0;i<10;i++){
+          setTimeout(()=>{
+            if(!glass || !glass.isConnected) return;
+            const d = document.createElement('div');
+            d.className='mno2-dot';
+            d.style.left = (10+Math.random()*60)+'px';
+            glass.appendChild(d);
+          }, dur*0.45 + i*90);
+        }
+      }
+      if(result.bubbles && !rm){
+        const glass = beakerScene.querySelector('.beaker-glass');
+        for(let i=0;i<8;i++){
+          setTimeout(()=>{
+            if(!glass || !glass.isConnected) return;
+            const b=document.createElement('div');
+            b.className='bubble';
+            b.style.left=(16+Math.random()*56)+'px';
+            glass.appendChild(b);
+            setTimeout(()=>b.remove(),1500);
+          }, i*160);
+        }
+      }
+      if(testType==='br2light' && result.litmusRed){
+        const lit = document.getElementById(chamberId+'-litmus');
+        setTimeout(()=>{
+          if(lit) lit.style.background = 'var(--acid)';
+          if(!rm && beakerScene && beakerScene.isConnected){
+            for(let i=0;i<5;i++){
+              setTimeout(()=>{
+                if(!beakerScene.isConnected) return;
+                const w=document.createElement('div'); w.className='gas-wisp';
+                beakerScene.appendChild(w);
+                setTimeout(()=>w.remove(),1900);
+              }, i*380);
+            }
+          }
+        }, dur*0.3);
+      }
+    } else {
+      beakerScene.classList.add('no-react-shake');
+      cap.textContent = 'เฝ้าสังเกต…';
+    }
+    setTimeout(()=>{
+      const secs = timer.stop();
+      result.seconds = secs;
+      tag.textContent = result.reacts ? (result.speed==='instant'?'จางสีทันที':'จางสีช้า ๆ') : 'ไม่เปลี่ยนแปลง';
+      tag.style.background = result.reacts ? 'rgba(34,211,176,0.15)' : 'rgba(226,61,61,0.12)';
+      tag.style.color = result.reacts ? 'var(--evidence)' : 'var(--acid)';
+      const timeNote = result.reacts ? ` <span class="time-note">(ใช้เวลา ≈ ${secs.toFixed(1)} วินาที)</span>` : '';
+      cap.innerHTML = (result.reacts
+        ? (isPerm
+            ? 'สารละลายสีม่วงจางหาย — ได้ ' + (result.product||'')
+            : (result.mechanism==='addition'
+                ? 'สีน้ำตาลแดงจางหายทันที (ปฏิกิริยาการเติม)'
+                : 'สีจางหายอย่างช้า ๆ (ปฏิกิริยาการแทนที่)' + (result.litmusRed? ' — กระดาษลิตมัสเปลี่ยนเป็นสีแดง':'')))
+        : 'ไม่มีการเปลี่ยนสี — ไม่เกิดปฏิกิริยา') + timeNote;
+      if(onDone) onDone(result);
+    }, dur + (rm?150:600));
+  }, rm?50:280);
+}
+/* ============================================================
+   9. EVIDENCE STATION — the core inquiry mechanic, reused by
+   guided missions, detective cases, and the free lab.
+   ============================================================ */
+let STATION = null; // current station instance state
+
+function startStation(cfg){
+  const molId = cfg.molId || cfg.pool[Math.floor(Math.random()*cfg.pool.length)];
+  STATION = {
+    cfg,
+    mol: getMolecule(molId),
+    evidence: {},        // {br2dark:result, br2light:result, kmno4:result}
+    combustionRuns: [],  // history of {o2Level, sootScore}
+    testCount: 0,
+    log: [],
+    solved: false
+  };
+  return STATION;
+}
+
+function stationEvidenceForDeduction(){
+  // strip to just .reacts booleans for isConsistent()
+  const ev = {};
+  if(STATION.evidence.br2dark) ev.br2dark = {reacts: STATION.evidence.br2dark.reacts};
+  if(STATION.evidence.br2light) ev.br2light = {reacts: STATION.evidence.br2light.reacts};
+  if(STATION.evidence.kmno4) ev.kmno4 = {reacts: STATION.evidence.kmno4.reacts};
+  return ev;
+}
+
+function renderStation(){
+  const cfg = STATION.cfg;
+  const mol = STATION.mol;
+  const mystery = !!cfg.mystery;
+
+  let html = '';
+  if(cfg.title){
+    html += `<h1 class="page-title">${cfg.title}${cfg.subtitle?`<small>${cfg.subtitle}</small>`:''}</h1>`;
+  }
+  if(cfg.brief){
+    html += `<div class="card card-tight"><p style="margin:0">${cfg.brief}</p></div>`;
+  }
+
+  html += `<div class="card">`;
+  if(mystery){
+    html += `<div class="vial-mystery">🧪</div><div class="center tag">ตัวอย่างลึกลับ — ระบุชนิดจากหลักฐานที่สังเกตได้</div>`;
+  } else {
+    html += moleculeCardHTML(mol, {size:130});
+  }
+  html += `<div class="test-row" id="testRow">` + renderTestButtons() + `</div>`;
+  html += chamberShellHTML('stationChamber');
+  html += `</div>`;
+
+  /* Detective mode deliberately hides the deduction board: by that stage the
+     player must hold the elimination logic in their own head, not read it off
+     the screen. Missions and the free lab keep it as a scaffold. */
+  if(cfg.showEvidenceBoard !== false){
+    html += `<div class="card" id="evidenceCard">` + renderEvidenceBoardHTML() + `</div>`;
+  } else if(STATION.log.length){
+    html += `<div class="card card-tight" id="evidenceCard">
+      <h2 class="section-title">🧾 บันทึกผลการทดสอบ</h2>
+      <div class="evidence-log">${STATION.log.map(l=>`<div class="evidence-item">${l}</div>`).join('')}</div>
+    </div>`;
+  } else {
+    html += `<div id="evidenceCard"></div>`;
+  }
+
+  if(cfg.mode!=='lab'){
+    html += `<button class="btn btn-primary btn-block" id="accuseBtn" ${STATION.testCount>0?'':'disabled'}>🔎 สรุปผล / ระบุชนิดสาร</button>`;
+  }
+
+  return html;
+}
+
+function renderTestButtons(){
+  const cfg = STATION.cfg;
+  const allowed = cfg.allowedTests || ['combustion','br2dark','br2light','kmno4'];
+  return Object.keys(TEST_META).map(t=>{
+    const meta = TEST_META[t];
+    const isAllowed = allowed.includes(t);
+    const done = t==='combustion' ? STATION.combustionRuns.length>0 : !!STATION.evidence[t];
+    return `<button class="test-btn ${done?'done':''}" data-test="${t}" ${isAllowed?'':'disabled'}>
+      <span class="ic">${meta.icon}</span>${meta.short}
+    </button>`;
+  }).join('');
+}
+
+function renderEvidenceBoardHTML(){
+  const ev = stationEvidenceForDeduction();
+  const hasAny = Object.keys(ev).length>0 || STATION.combustionRuns.length>0;
+  let html = `<h2 class="section-title">📌 กระดานหลักฐาน</h2>`;
+  if(!hasAny){
+    html += `<p style="margin:0">ยังไม่มีหลักฐาน — เริ่มทดสอบเพื่อดูว่าตัวอย่างนี้อาจเป็นสารกลุ่มใด</p>`;
+  } else {
+    html += `<div class="evidence-board">`;
+    ['alkane','unsat','aromatic'].forEach(cls=>{
+      const consistent = isConsistent(cls, ev);
+      let hint = '';
+      if(cls==='aromatic' && ev.br2light){
+        hint = 'ใช้เขม่าจากการเผาไหม้ช่วยยืนยัน (วงอะโรมาติกมักมีเขม่ามาก)';
+      }
+      html += `<div class="suspect ${consistent? (hasAny?'possible':''):'ruled-out'}">
+        <div class="sicon">${consistent?'🔬':'✖️'}</div>
+        <div class="sname">${CLASS_LABELS[cls]}${hint?`<span class="shint">${hint}</span>`:''}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  if(STATION.combustionRuns.length>0){
+    const last = STATION.combustionRuns[STATION.combustionRuns.length-1];
+    html += `<div class="evidence-log"><div class="evidence-item">🔥 ระดับเขม่าที่สังเกตได้: <b style="margin-left:4px;color:var(--flame-2)">${Math.round(last.sootScore*100)}%</b></div></div>`;
+  }
+  if(STATION.log.length){
+    html += `<div class="evidence-log">` + STATION.log.slice(-4).map(l=>`<div class="evidence-item">${l}</div>`).join('') + `</div>`;
+  }
+  return html;
+}
+
+function attachTestButtonHandlers(){
+  // Safe to call repeatedly: #testRow is fully replaced (innerHTML) after every
+  // test, so its buttons are fresh nodes with no listeners yet.
+  document.querySelectorAll('#testRow .test-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(btn.disabled) return;
+      handleStationTest(btn.dataset.test);
+    });
+  });
+}
+function attachStationHandlers(afterAccuse){
+  attachTestButtonHandlers();
+  // accuseBtn is NEVER replaced/recreated during a station's lifetime, so its
+  // listener must be bound exactly once here — re-binding on every test result
+  // (as an earlier version of this function did) stacked duplicate listeners,
+  // the last of which always closed over afterAccuse=undefined and silently
+  // broke mission completion after more than one test was run.
+  const accuseBtn = document.getElementById('accuseBtn');
+  if(accuseBtn){
+    accuseBtn.addEventListener('click', ()=> openAccuseSheet(afterAccuse));
+  }
+}
+
+function handleStationTest(testType){
+  document.querySelectorAll('#testRow .test-btn').forEach(b=>b.disabled=true);
+  const opts = {};
+  if(testType==='combustion' && STATION.cfg.o2Level) opts.o2Level = STATION.cfg.o2Level();
+  playTest('stationChamber', STATION.mol, testType, opts, (result)=>{
+    STATION.testCount++;
+    if(testType==='combustion'){
+      STATION.combustionRuns.push(result);
+      STATION.log.push('🔥 เผาไหม้ (O₂ '+(opts.o2Level==='low'?'น้อย':opts.o2Level==='high'?'มาก':'ปกติ')+'): '+result.label);
+    } else {
+      STATION.evidence[testType] = result;
+      STATION.log.push(TEST_META[testType].icon+' '+TEST_META[testType].label+': '+(result.reacts?'เกิดปฏิกิริยา':'ไม่เกิดปฏิกิริยา'));
+    }
+    if(typeof STATION.cfg.onTest === 'function'){
+      try{ STATION.cfg.onTest(STATION.mol, testType, result); }
+      catch(e){ /* a reward hook must never break the experiment itself */ }
+    }
+    LOG.event('test', {
+      mol: STATION.mol.id, formula: STATION.mol.formula, test: testType,
+      o2: opts.o2Level || '', reacts: (testType==='combustion' ? '' : result.reacts),
+      soot: (testType==='combustion' ? Math.round(result.sootScore*100) : ''),
+      secs: result.seconds ? +result.seconds.toFixed(1) : '',
+      mode: STATION.cfg.mode || ''
+    });
+    document.getElementById('testRow').innerHTML = renderTestButtons();
+    const evCard = document.getElementById('evidenceCard');
+    if(evCard){
+      evCard.innerHTML = (STATION.cfg.showEvidenceBoard !== false)
+        ? renderEvidenceBoardHTML()
+        : (STATION.log.length ? `<div class="card card-tight"><h2 class="section-title">🧾 บันทึกผลการทดสอบ</h2>
+             <div class="evidence-log">${STATION.log.map(l=>`<div class="evidence-item">${l}</div>`).join('')}</div></div>` : '');
+    }
+    attachTestButtonHandlers();
+    const accuseBtn = document.getElementById('accuseBtn');
+    if(accuseBtn) accuseBtn.disabled = STATION.testCount<=0;
+  });
+}
+
+function openAccuseSheet(afterAccuse){
+  STATION._afterAccuse = afterAccuse;
+  const options = [
+    {cls:'alkane', label:'แอลเคน', desc:'สารประกอบอิ่มตัว'},
+    {cls:'unsat', label:'แอลคีน หรือ แอลไคน์', desc:'มีพันธะคู่หรือพันธะสาม'},
+    {cls:'aromatic', label:'แอโรมาติกไฮโดรคาร์บอน', desc:'มีวงเบนซีน'}
+  ];
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <h2 class="section-title">ตัวอย่างนี้คือสารกลุ่มใด?</h2>
+    <p>เลือกจากหลักฐานที่สังเกตได้ — ไม่มีการลงโทษถ้าเดาผิด แค่กลับไปทดสอบเพิ่มได้เสมอ</p>
+    ${options.map(o=>`<button class="btn btn-ghost btn-block mt8" data-cls="${o.cls}" style="justify-content:flex-start; text-align:left;">
+      <span style="font-weight:700;margin-right:8px;">${o.label}</span><span class="tag">${o.desc}</span>
+    </button>`).join('')}
+  `);
+  document.querySelectorAll('[data-cls]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const guess = btn.dataset.cls;
+      const correct = molClassGroup(STATION.mol) === guess;
+      resolveAccusation(correct, afterAccuse);
+    });
+  });
+}
+
+/* 0–10 score for a single detective case: full marks for an efficient,
+   correct identification; nothing for a wrong call. */
+function caseScore10(correct, tests){
+  if(!correct) return 0;
+  if(tests<=2) return 10;
+  if(tests===3) return 8;
+  if(tests===4) return 6;
+  return 5;
+}
+
+function resolveAccusation(correct, afterAccuse){
+  closeSheet();
+  const mol = STATION.mol;
+
+  /* Detective mode: one shot per case. A wrong call is not a dead end but it
+     is final — the answer is revealed with its reasoning and play moves on. */
+  if(STATION.cfg.noRetry){
+    const score = caseScore10(correct, STATION.testCount);
+    STATION.solved = true;
+    LOG.event('case', {
+      mol: mol.id, formula: mol.formula, correct: correct?1:0,
+      tests: STATION.testCount, score10: score
+    });
+    openSheet(`
+      <div class="sheet-handle"></div>
+      <div class="center" style="font-size:40px;">${correct?'✅':'❌'}</div>
+      <h2 class="section-title center" style="justify-content:center;">${correct?'ระบุถูกต้อง':'ระบุไม่ถูกต้อง'}</h2>
+      <div class="center" style="font-size:22px;font-weight:700;color:${correct?'var(--evidence)':'var(--acid)'};margin-bottom:4px;">${score}/10</div>
+      ${moleculeCardHTML(mol,{size:120})}
+      <div class="why-box mt12">${explainWhy(mol)}</div>
+      <button class="btn btn-primary btn-block mt16" id="stationContinueBtn">ข้อถัดไป →</button>
+    `);
+    document.getElementById('stationContinueBtn').addEventListener('click', ()=>{
+      closeSheet();
+      if(afterAccuse) afterAccuse(correct, score, STATION.testCount, mol);
+    });
+    return;
+  }
+
+  if(correct){
+    const stars = STATION.testCount<=2 ? 3 : STATION.testCount<=4 ? 2 : 1;
+    STATION.solved = true;
+    openSheet(`
+      <div class="sheet-handle"></div>
+      <div class="center" style="font-size:40px;">✅</div>
+      <h2 class="section-title center" style="justify-content:center;">ระบุถูกต้อง!</h2>
+      ${moleculeCardHTML(mol,{size:120})}
+      <div class="mt12">${'⭐'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
+      <div class="why-box mt12">${explainWhy(mol)}</div>
+      <button class="btn btn-primary btn-block mt16" id="stationContinueBtn">ไปต่อ</button>
+    `);
+    document.getElementById('stationContinueBtn').addEventListener('click', ()=>{
+      closeSheet();
+      if(afterAccuse) afterAccuse(true, stars, STATION.testCount, mol);
+    });
+  } else {
+    openSheet(`
+      <div class="sheet-handle"></div>
+      <div class="center" style="font-size:36px;">🧐</div>
+      <h2 class="section-title center" style="justify-content:center;">หลักฐานยังไม่ชัดเจนพอ</h2>
+      <p class="center">ลองทดสอบเพิ่มเติม แล้วดูกระดานหลักฐานอีกครั้ง — สารกลุ่มไหนที่ยัง "เป็นไปได้" อยู่บ้าง?</p>
+      <button class="btn btn-ghost btn-block mt12" id="stationRetryBtn">กลับไปทดสอบต่อ</button>
+    `);
+    document.getElementById('stationRetryBtn').addEventListener('click', closeSheet);
+  }
+}
+
+function explainWhy(mol){
+  const g = molClassGroup(mol);
+  if(g==='unsat'){
+    return `${mol.th} มีพันธะคู่หรือพันธะสาม จึงเกิด <b>ปฏิกิริยาการเติม</b> กับ Br₂ ได้ทั้งในที่มืดและที่สว่างทันที และฟอกจางสี KMnO₄ ได้ (ออกซิไดส์เป็น ${testKMnO4(mol).product || 'สารประกอบใหม่'})`;
+  }
+  if(g==='alkane'){
+    return `${mol.th} เป็นสารอิ่มตัว ไม่มีพันธะคู่/สาม จึง<b>ไม่ทำปฏิกิริยากับ Br₂ ในที่มืด</b> แต่ทำ<b>ปฏิกิริยาการแทนที่</b>กับ Br₂ ได้ช้าๆ เมื่อมีแสง (ปลดปล่อย HBr ที่เป็นกรด จึงเปลี่ยนกระดาษลิตมัสเป็นสีแดง) และไม่ฟอกจางสี KMnO₄`;
+  }
+  return `${mol.th} มีวงเบนซีนที่เสถียรมาก จึงไม่เกิดปฏิกิริยาการเติมหรือฟอกจางสี KMnO₄ ${mol.hasAlkylChain ? 'แต่หมู่แอลคิลข้างวงยังเกิดปฏิกิริยาการแทนที่กับ Br₂ ในที่สว่างได้ช้าๆ เหมือนแอลเคน' : 'และไม่ทำปฏิกิริยากับ Br₂ แม้ในที่สว่าง'} — ข้อสังเกตสำคัญ: สารกลุ่มนี้มักให้เขม่ามากเมื่อเผาไหม้ เพราะอัตราส่วน C:H ในวงสูง`;
+}
+/* ============================================================
+   10. MISSIONS
+   ============================================================ */
+const MISSIONS = [
+  { id:'m1', type:'rank', title:'ภารกิจ 1', name:'จัดอันดับเขม่า',
+    desc:'ทำนายว่าสารใดให้เขม่ามาก-น้อย แล้วพิสูจน์ด้วยการเผาจริง',
+    molIds:['pentane','pentene1','pentyne1'],
+    insight:'สารทั้งสามชนิดมีจำนวนคาร์บอน 5 อะตอมเท่ากัน แต่ให้เขม่าต่างกัน เพราะอัตราส่วน C:H สูงขึ้นตามระดับความไม่อิ่มตัว (แอลเคน < แอลคีน < แอลไคน์) — ยิ่งอัตราส่วน C:H สูง ยิ่งเผาไหม้ไม่สมบูรณ์ได้ง่าย จึงมีเขม่ามาก' },
+  { id:'m2', type:'slider', title:'ภารกิจ 2', name:'กับดักออกซิเจน',
+    desc:'ความเข้าใจคลาดเคลื่อนที่พบบ่อย: สารอิ่มตัวเผาไหม้สมบูรณ์เสมอ ไม่จริงเสมอไป!',
+    molA:'butane', molB:'propyne',
+    insight:'ปริมาณเขม่าไม่ได้ขึ้นกับความอิ่มตัวของสารเพียงอย่างเดียว แต่ขึ้นกับปริมาณแก๊สออกซิเจนด้วย แม้แต่บิวเทน (แอลเคน) ก็มีเขม่ามากได้ถ้าออกซิเจนไม่พอ และโพรไพน์ (แอลไคน์) ก็เผาไหม้ค่อนข้างสะอาดได้ถ้าออกซิเจนมากพอ' },
+  { id:'m3', type:'observe', title:'ภารกิจ 3', name:'ทดสอบในที่มืด',
+    desc:'ลองหยดสารละลายโบรมีนในที่มืดกับสารต่างชนิด',
+    molIds:['ethane','propene','ethyne','cyclopropane'], allowedTests:['br2dark'],
+    insight:'ในที่มืด มีเพียงสารที่มีพันธะคู่หรือพันธะสาม (แอลคีน/แอลไคน์) เท่านั้นที่ฟอกจางสีโบรมีนได้ทันที (ปฏิกิริยาการเติม) ข้อสังเกตที่น่าสนใจ: ไซโคลโพรเพนมีสูตรโมเลกุล C₃H₆ เหมือนโพรพีนเป๊ะ แต่<b>ไม่</b>ทำปฏิกิริยาในที่มืด! สูตรโมเลกุลอย่างเดียวบอกชนิดสารไม่ได้ ต้องดูโครงสร้างจริง' },
+  { id:'m4', type:'observe', title:'ภารกิจ 4', name:'แสงเปิดเผยความจริง',
+    desc:'ทดสอบสารชุดเดิมอีกครั้ง แต่คราวนี้ในที่สว่าง พร้อมกระดาษลิตมัส',
+    molIds:['ethane','propene','cyclopropane','toluene','benzene'], allowedTests:['br2light'],
+    insight:'ในที่สว่าง ไซโคลโพรเพนกลับทำปฏิกิริยา (แบบแทนที่ ช้าๆ เหมือนแอลเคน) นี่คือหลักฐานที่ยืนยันว่ามันคือแอลเคนวงแหวน ไม่ใช่แอลคีน ส่วนโพรพีนยังคงเติมโบรมีนได้เร็วเหมือนเดิมและไม่ปล่อยแก๊สกรด ขณะที่โทลูอีนทำปฏิกิริยาแทนที่ช้าๆ ที่หมู่ CH₃ แต่เบนซีนล้วนไม่ทำปฏิกิริยาเลย' },
+  { id:'m5', type:'observe', title:'ภารกิจ 5', name:'สีม่วงจางหาย',
+    desc:'ทดสอบด่างทับทิม (KMnO₄) กับแอลไคน์ปลายสายและกลางสาย',
+    molIds:['pentyne1','hexyne2','hexane'], allowedTests:['kmno4'],
+    insight:'ทั้งเพนท์-1-ไอน์และเฮกซ์-2-ไอน์ฟอกจางสี KMnO₄ ได้ (มีพันธะสาม) แต่ให้ผลิตภัณฑ์ต่างกัน: แอลไคน์ปลายสาย (พันธะสามที่ปลาย) ให้เกลือคาร์บอกซิเลตพร้อมฟองแก๊ส CO₂ ส่วนแอลไคน์กลางสายให้ไดคีโทนโดยไม่มีฟองแก๊ส เฮกเซนซึ่งอิ่มตัวไม่ทำปฏิกิริยาเลย' },
+  { id:'m6', type:'case', title:'ภารกิจ 6', name:'แฟ้มคดีแรก',
+    desc:'ระบุตัวอย่างลึกลับจากวงแหวนสองชนิด โดยใช้หลักฐานทุกช่องทาง',
+    pool:['cyclohexane','benzene'], stars:3 },
+  { id:'m7', type:'case', title:'ภารกิจ 7', name:'ผู้เชี่ยวชาญไฮโดรคาร์บอน',
+    desc:'คดีที่ยากที่สุด: แยกแอโรมาติกที่มีหมู่แอลคิลออกจากแอลเคนธรรมดา',
+    pool:['toluene','pentane','hexane'], stars:5 }
+];
+
+function missionCompleted(id){ return !!(STATE.missions[id] && STATE.missions[id].stars>0); }
+function missionUnlocked(idx){
+  if(idx===0) return true;
+  return missionCompleted(MISSIONS[idx-1].id);
+}
+
+function renderMissionsScreen(){
+  let html = `<h1 class="page-title">ภารกิจ<small>เรียงตามลำดับ ปลดล็อกทีละภารกิจ</small></h1>`;
+  MISSIONS.forEach((m,idx)=>{
+    const unlocked = missionUnlocked(idx);
+    const done = missionCompleted(m.id);
+    const stars = STATE.missions[m.id] ? STATE.missions[m.id].stars : 0;
+    html += `<div class="mission-item ${unlocked?'':'locked'} ${done?'complete':''}" data-mission="${m.id}" ${unlocked?'':'aria-disabled="true"'}>
+      <div class="mission-num">${done?'✓':(idx+1)}</div>
+      <div class="mission-body">
+        <div class="mission-title">${m.name}</div>
+        <div class="mission-desc">${m.desc}</div>
+      </div>
+      <div class="mission-stars">${unlocked ? (done?'⭐'.repeat(stars)+'☆'.repeat(3-Math.min(stars,3)) : 'พร้อมเริ่ม') : '🔒'}</div>
+    </div>`;
+  });
+  const detUnlocked = missionCompleted('m7');
+  html += `<div class="hr"></div>
+    <div class="card ${detUnlocked?'':'card-tight'}">
+      <h2 class="section-title">🔍 โหมดนักสืบอิสระ</h2>
+      <p>${detUnlocked ? 'คดีสุ่ม 30 ข้อต่อรอบ ตอบได้ครั้งเดียวต่อข้อ คิดคะแนนเฉลี่ยเต็ม 10' : 'ทำภารกิจที่ 7 ให้สำเร็จก่อนเพื่อปลดล็อก'}</p>
+      <button class="btn ${detUnlocked?'btn-primary':'btn-ghost'} btn-block" id="goDetectiveBtn" ${detUnlocked?'':'disabled'}>ไปโหมดนักสืบ</button>
+    </div>`;
+  return html;
+}
+
+function attachMissionsHandlers(){
+  document.querySelectorAll('.mission-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = el.dataset.mission;
+      const idx = MISSIONS.findIndex(m=>m.id===id);
+      if(!missionUnlocked(idx)){ toast('ต้องทำภารกิจก่อนหน้าให้สำเร็จก่อน'); return; }
+      openMission(id);
+    });
+  });
+  const db = document.getElementById('goDetectiveBtn');
+  if(db) db.addEventListener('click', ()=>{ if(!db.disabled) navigate('detective'); });
+}
+
+/* -------- mission dispatch -------- */
+function openMission(id){
+  const m = MISSIONS.find(x=>x.id===id);
+  if(m.type==='rank') renderRankMission(m);
+  else if(m.type==='slider') renderSliderMission(m);
+  else if(m.type==='observe') renderObserveMission(m,0,{});
+  else if(m.type==='case') renderCaseMission(m);
+}
+
+function completeMission(m, stars){
+  const prev = STATE.missions[m.id] ? STATE.missions[m.id].stars : 0;
+  STATE.missions[m.id] = { stars: Math.max(prev, stars) };
+  addXP(stars>prev ? 30 + stars*10 : 10);
+  saveState();
+  LOG.event('mission', {mission:m.id, stars:stars});
+  submitSummary();
+}
+
+/* -------- TYPE: rank (M1) -------- */
+let RANK_DRAG = null;
+function renderRankMission(m){
+  const mols = m.molIds.map(getMolecule);
+  const order = [...mols].sort(()=>Math.random()-0.5);
+  const root = document.getElementById('screen-root');
+  root.innerHTML = `
+    <h1 class="page-title">${m.name}<small>${m.desc}</small></h1>
+    <div class="card">
+      <h2 class="section-title">ทำนายก่อน: ลากจัดอันดับ "มากไปน้อย"</h2>
+      <div class="rank-list" id="rankList">
+        ${order.map((mo,i)=>`<div class="rank-item" draggable="true" data-id="${mo.id}">
+          <span class="grip">⠿</span><span class="rnum">${i+1}</span>
+          <span style="flex:1">${mo.th} <span class="tag">${mo.formula}</span></span>
+        </div>`).join('')}
+      </div>
+      <button class="btn btn-primary btn-block mt16" id="rankConfirmBtn">ยืนยันการทำนาย แล้วเผาจริง!</button>
+    </div>`;
+  setupDragList(document.getElementById('rankList'));
+  document.getElementById('rankConfirmBtn').addEventListener('click', ()=>{
+    const guessOrder = Array.from(document.querySelectorAll('#rankList .rank-item')).map(el=>el.dataset.id);
+    burnRankSequence(m, guessOrder, mols);
+  });
+}
+function setupDragList(list){
+  let dragEl=null;
+  list.querySelectorAll('.rank-item').forEach(item=>{
+    item.addEventListener('dragstart', ()=>{dragEl=item; item.classList.add('dragging');});
+    item.addEventListener('dragend', ()=>{item.classList.remove('dragging'); renumber(list);});
+  });
+  list.addEventListener('dragover', (e)=>{
+    e.preventDefault();
+    const after = getDragAfter(list, e.clientY);
+    if(!dragEl) return;
+    if(after==null) list.appendChild(dragEl); else list.insertBefore(dragEl, after);
+  });
+  // touch fallback: tap to move to top
+  list.querySelectorAll('.rank-item').forEach(item=>{
+    item.addEventListener('touchend', ()=>{}, {passive:true});
+  });
+  function getDragAfter(container, y){
+    const els = [...container.querySelectorAll('.rank-item:not(.dragging)')];
+    return els.reduce((closest,child)=>{
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height/2;
+      if(offset<0 && offset>closest.offset) return {offset, element:child};
+      return closest;
+    }, {offset:-Infinity}).element;
+  }
+  function renumber(l){ l.querySelectorAll('.rnum').forEach((n,i)=>n.textContent=i+1); }
+}
+function burnRankSequence(m, guessOrder, mols, i){
+  i = i||0;
+  const root = document.getElementById('screen-root');
+  if(i===0){
+    root.innerHTML = `<h1 class="page-title">${m.name}<small>กำลังพิสูจน์ด้วยการเผาจริง…</small></h1>
+      <div class="card">${chamberShellHTML('rankChamber')}<div id="rankProgress" class="mt12"></div></div>`;
+  }
+  if(i>=guessOrder.length){
+    const correctOrder = [...mols].sort((a,b)=>b.chRatio-a.chRatio).map(x=>x.id);
+    const correct = JSON.stringify(correctOrder)===JSON.stringify(guessOrder);
+    const stars = correct?3:2;
+    completeMission(m, stars);
+    document.getElementById('screen-root').innerHTML += `
+      <div class="card">
+        <h2 class="section-title">${correct?'🎯 ทำนายถูกต้อง!':'📊 ผลจริง'}</h2>
+        <p>ลำดับเขม่ามาก→น้อยที่แท้จริง: ${correctOrder.map(id=>getMolecule(id).th).join(' → ')}</p>
+        <div class="why-box">${m.insight}</div>
+        <div class="mt12">${'⭐'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
+        <button class="btn btn-primary btn-block mt16" id="backToMissions">กลับไปหน้าภารกิจ</button>
+      </div>`;
+    document.getElementById('backToMissions').addEventListener('click', ()=>navigate('missions'));
+    return;
+  }
+  const mol = getMolecule(guessOrder[i]);
+  playTest('rankChamber', mol, 'combustion', {}, (res)=>{
+    document.getElementById('rankProgress').innerHTML += `<div class="evidence-item">${mol.th}: เขม่า ${Math.round(res.sootScore*100)}%</div>`;
+    setTimeout(()=>burnRankSequence(m, guessOrder, mols, i+1), 500);
+  });
+}
+
+/* -------- TYPE: slider (M2) -------- */
+function renderSliderMission(m){
+  const root = document.getElementById('screen-root');
+  const molA = getMolecule(m.molA), molB = getMolecule(m.molB);
+  let current = molA;
+  let o2 = 'low';
+  root.innerHTML = `
+    <h1 class="page-title">${m.name}<small>${m.desc}</small></h1>
+    <div class="card">
+      <div class="grid2">
+        <button class="btn btn-ghost btn-sm" id="pickA">${molA.th} (แอลเคน)</button>
+        <button class="btn btn-ghost btn-sm" id="pickB">${molB.th} (แอลไคน์)</button>
+      </div>
+      ${chamberShellHTML('sliderChamber')}
+      <div class="o2-slider-wrap">
+        <input type="range" min="0" max="2" step="1" value="0" id="o2Range">
+        <div class="slider-labels"><span>O₂ น้อย</span><span>O₂ ปกติ</span><span>O₂ มาก</span></div>
+      </div>
+      <button class="btn btn-flame btn-block mt12" id="burnSliderBtn">🔥 เผาเลย</button>
+    </div>
+    <div class="card" id="sliderInsightCard" style="display:none;">
+      <h2 class="section-title">💡 ข้อสังเกต</h2>
+      <div class="why-box">${m.insight}</div>
+      <button class="btn btn-primary btn-block mt12" id="sliderDoneBtn">รับรางวัลและกลับไปภารกิจ</button>
+    </div>`;
+  let triedLowSatd=false, triedHighUnsatd=false;
+  const setActive=(id)=>{
+    document.getElementById('pickA').classList.toggle('btn-primary', id==='A');
+    document.getElementById('pickB').classList.toggle('btn-primary', id==='B');
+  };
+  document.getElementById('pickA').addEventListener('click', ()=>{current=molA; setActive('A');});
+  document.getElementById('pickB').addEventListener('click', ()=>{current=molB; setActive('B');});
+  document.getElementById('o2Range').addEventListener('input', (e)=>{
+    o2 = ['low','normal','high'][+e.target.value];
+  });
+  document.getElementById('burnSliderBtn').addEventListener('click', ()=>{
+    playTest('sliderChamber', current, 'combustion', {o2Level:o2}, ()=>{
+      if(current.id===molA.id && o2==='low') triedLowSatd=true;
+      if(current.id===molB.id && o2==='high') triedHighUnsatd=true;
+      if(triedLowSatd && triedHighUnsatd){
+        document.getElementById('sliderInsightCard').style.display='block';
+        completeMission(m, 3);
+        safeScrollIntoView(document.getElementById('sliderInsightCard'));
+      } else {
+        toast('ลองอีกแบบ: '+(!triedLowSatd? (molA.th+' + O₂ น้อย') : (molB.th+' + O₂ มาก')));
+      }
+    });
+  });
+  document.addEventListener('click', function h(e){
+    if(e.target && e.target.id==='sliderDoneBtn'){ navigate('missions'); document.removeEventListener('click',h); }
+  });
+}
+
+/* -------- TYPE: observe (M3,M4,M5) -------- */
+function renderObserveMission(m, idx, results){
+  const root = document.getElementById('screen-root');
+  if(idx>=m.molIds.length){
+    completeMission(m, 3);
+    root.innerHTML = `<h1 class="page-title">${m.name}</h1>
+      <div class="card">
+        <h2 class="section-title">💡 สรุปผลการสังเกต</h2>
+        <div class="why-box">${m.insight}</div>
+        <div class="mt12">⭐⭐⭐</div>
+        <button class="btn btn-primary btn-block mt16" id="backToMissions2">กลับไปหน้าภารกิจ</button>
+      </div>`;
+    document.getElementById('backToMissions2').addEventListener('click', ()=>navigate('missions'));
+    return;
+  }
+  const mol = getMolecule(m.molIds[idx]);
+  const testType = m.allowedTests[0];
+  root.innerHTML = `
+    <h1 class="page-title">${m.name}<small>ตัวอย่างที่ ${idx+1}/${m.molIds.length}</small></h1>
+    <div class="card">
+      ${moleculeCardHTML(mol,{size:120})}
+      <button class="btn ${TEST_META[testType].cls} btn-block mt12" id="runObsBtn">${TEST_META[testType].icon} ${TEST_META[testType].label}</button>
+      ${chamberShellHTML('obsChamber')}
+    </div>
+    <div class="card" id="obsResultsCard">
+      <h2 class="section-title">ผลที่สังเกตแล้ว</h2>
+      <div class="evidence-log">${Object.keys(results).map(id=>`<div class="evidence-item">${getMolecule(id).th}: ${results[id]}</div>`).join('') || '<span class="tag">ยังไม่มี</span>'}</div>
+    </div>
+    <button class="btn btn-primary btn-block" id="nextObsBtn" style="display:none;">ตัวอย่างถัดไป →</button>`;
+  document.getElementById('runObsBtn').addEventListener('click', ()=>{
+    document.getElementById('runObsBtn').disabled = true;
+    playTest('obsChamber', mol, testType, {}, (res)=>{
+      let summary;
+      if(testType==='br2dark' || testType==='br2light') summary = res.reacts ? (res.speed==='instant'?'จางสีทันที (เติม)':'จางสีช้าๆ (แทนที่)'+(res.litmusRed?' + ลิตมัสแดง':'')) : 'ไม่เปลี่ยนแปลง';
+      else if(testType==='kmno4') summary = res.reacts ? ('จางสี — '+res.product) : 'ไม่เปลี่ยนแปลง';
+      results[mol.id]=summary;
+      document.getElementById('obsResultsCard').querySelector('.evidence-log').innerHTML =
+        Object.keys(results).map(id=>`<div class="evidence-item">${getMolecule(id).th}: ${results[id]}</div>`).join('');
+      document.getElementById('nextObsBtn').style.display='block';
+    });
+  });
+  document.getElementById('nextObsBtn').addEventListener('click', ()=>renderObserveMission(m, idx+1, results));
+}
+
+/* -------- TYPE: case (M6, M7) -------- */
+function renderCaseMission(m){
+  const root = document.getElementById('screen-root');
+  startStation({
+    mode:'mission', mystery:true, pool:m.pool,
+    title: m.title+': '+m.name,
+    subtitle: m.desc,
+    brief: m.desc,
+    allowedTests:['combustion','br2dark','br2light','kmno4']
+  });
+  root.innerHTML = renderStation();
+  attachStationHandlers((correct, stars)=>{
+    completeMission(m, stars);
+    navigate('missions');
+  });
+}
+
+/* ============================================================
+   FREE DETECTIVE MODE — a 30-case round.
+   No evidence board (the elimination logic must now live in the player's
+   head), one attempt per case, scored 0–10 and reported as an average.
+   ============================================================ */
+function buildDetectiveRound(){
+  // sample 30 cases from the 30 molecules: every molecule appears once,
+  // shuffled, so a round covers the whole space with no repeats
+  const ids = MOLECULES.map(x=>x.id);
+  for(let i=ids.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [ids[i],ids[j]]=[ids[j],ids[i]];
+  }
+  return ids.slice(0, DETECTIVE_ROUND_SIZE);
+}
+
+let DETECTIVE_ROUND = null;
+
+function startDetectiveRound(){
+  DETECTIVE_ROUND = { queue: buildDetectiveRound(), idx:0, scoreSum:0, correct:0 };
+  STATE.detective.answered = 0;
+  STATE.detective.correct = 0;
+  STATE.detective.scoreSum = 0;
+  saveState();
+  renderDetectiveCase();
+}
+
+function renderDetectiveCase(){
+  const root = document.getElementById('screen-root');
+  const R = DETECTIVE_ROUND;
+  if(!R) { startDetectiveRound(); return; }
+
+  if(R.idx >= R.queue.length){ renderDetectiveSummary(); return; }
+
+  const avgSoFar = R.idx>0 ? (R.scoreSum/R.idx) : 0;
+  startStation({
+    mode:'detective', mystery:true, molId: R.queue[R.idx],
+    noRetry:true, showEvidenceBoard:false,
+    title:'โหมดนักสืบอิสระ',
+    subtitle:`ข้อ ${R.idx+1} / ${R.queue.length} · เฉลี่ย ${avgSoFar.toFixed(1)}/10`,
+    allowedTests:['combustion','br2dark','br2light','kmno4']
+  });
+  root.innerHTML = renderStation();
+  attachStationHandlers((correct, score10)=>{
+    R.scoreSum += score10;
+    if(correct) R.correct++;
+    R.idx++;
+    STATE.detective.answered = R.idx;
+    STATE.detective.correct = R.correct;
+    STATE.detective.scoreSum = R.scoreSum;
+    addXP(score10);
+    saveState();
+    renderDetectiveCase();
+  });
+}
+
+function renderDetectiveSummary(){
+  const R = DETECTIVE_ROUND;
+  const avg = R.scoreSum / R.queue.length;
+  const prevBest = STATE.detective.bestAvg || 0;
+  const isBest = avg > prevBest;
+  if(isBest) STATE.detective.bestAvg = avg;
+  STATE.detective.roundsDone = (STATE.detective.roundsDone||0) + 1;
+  /* Commit the round totals to STATE here rather than relying on the per-case
+     callback: submitSummary() reads STATE, so this keeps the teacher's synced
+     summary correct no matter how the round reached its end. */
+  STATE.detective.answered = R.queue.length;
+  STATE.detective.correct  = R.correct;
+  STATE.detective.scoreSum = R.scoreSum;
+  addXP(Math.round(avg*5));
+  saveState();
+  LOG.event('detective_round', {
+    tests:R.queue.length, correct:R.correct, avg10:+avg.toFixed(2), score10:R.scoreSum
+  });
+  submitSummary();   // keep the teacher's summary sheet current without manual sync
+  document.getElementById('screen-root').innerHTML = `
+    <h1 class="page-title">สรุปผลรอบนี้</h1>
+    <div class="card center">
+      <div style="font-size:38px;">${avg>=8?'🏆':avg>=6?'🎯':'📘'}</div>
+      <div style="font-size:40px;font-weight:700;color:var(--evidence);line-height:1.1;">${avg.toFixed(1)}</div>
+      <div class="tag">คะแนนเฉลี่ย (เต็ม 10)</div>
+      ${isBest?'<div class="pill pill-unsat mt12">สถิติใหม่!</div>':`<div class="tag mt12">สถิติเดิม ${prevBest.toFixed(1)}/10</div>`}
+      <div class="hr"></div>
+      <div class="grid2">
+        <div class="chip">ตอบถูก<br><b style="color:var(--evidence);font-size:17px;">${R.correct}/${R.queue.length}</b></div>
+        <div class="chip">คะแนนรวม<br><b style="color:var(--gold);font-size:17px;">${R.scoreSum}</b></div>
+      </div>
+      <button class="btn btn-primary btn-block mt16" id="detAgainBtn">เริ่มรอบใหม่</button>
+      <button class="btn btn-ghost btn-block mt8" id="detHomeBtn">กลับหน้าแรก</button>
+    </div>`;
+  document.getElementById('detAgainBtn').addEventListener('click', startDetectiveRound);
+  document.getElementById('detHomeBtn').addEventListener('click', ()=>navigate('home'));
+}
+/* ============================================================
+   11. GOOGLE SHEETS INTEGRATION (URL embedded in CFG at top of file)
+   ============================================================ */
+function submitSummary(){
+  const missionStars = Object.values(STATE.missions).reduce((s,m)=>s+m.stars,0);
+  const d = STATE.detective;
+  LOG.event('summary', {
+    rank: rankForXP(STATE.xp),
+    mission: Object.keys(STATE.missions).length,
+    stars: missionStars,
+    correct: d.correct,
+    tests: d.answered,
+    avg10: d.answered ? +(d.scoreSum/d.answered).toFixed(2) : 0,
+    score10: d.bestAvg ? +d.bestAvg.toFixed(2) : 0
+  });
+  LOG.flush();
+}
+
+function exportCSV(){
+  const csv = LOG.toCSV();
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `hydrolab_${STATE.room||'x'}_${STATE.no||'x'}_${STATE.name||'player'}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   12. SCREENS
+   ============================================================ */
+function renderProfileScreen(){
+  document.getElementById('topbar').style.display='none';
+  document.getElementById('bottomnav').style.display='none';
+  document.getElementById('screen-root').innerHTML = `
+    <div class="mt16"></div>
+    <div class="hero-title">🔬 นักสืบไฮโดรคาร์บอน</div>
+    <div class="hero-sub">HYDROCARBON SLEUTH LAB — เผาไหม้ · ฟอกจางสีโบรมีน · ด่างทับทิม</div>
+    <div class="card">
+      <p style="margin-bottom:2px;">ยินดีต้อนรับสู่ห้องทดลองนิติเคมี ที่นี่คุณจะไม่ได้ท่องจำคำตอบ แต่จะ<b style="color:var(--text)">ลงมือทดลองจริง สังเกตหลักฐาน และให้เหตุผล</b> เหมือนนักสืบตัวจริง</p>
+      <label class="field-label" for="nameInput">ชื่อ–สกุล</label>
+      <input type="text" id="nameInput" placeholder="พิมพ์ชื่อของคุณ" maxlength="40">
+      <div class="grid2">
+        <div>
+          <label class="field-label" for="roomInput">ห้อง</label>
+          <input type="text" id="roomInput" placeholder="เช่น 6/1" maxlength="10">
+        </div>
+        <div>
+          <label class="field-label" for="noInput">เลขที่</label>
+          <input type="text" id="noInput" placeholder="เช่น 12" maxlength="4" inputmode="numeric">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block mt16" id="startGameBtn">เริ่มการทดลอง</button>
+    </div>`;
+  document.getElementById('startGameBtn').addEventListener('click', async ()=>{
+    const v = document.getElementById('nameInput').value.trim();
+    const room = document.getElementById('roomInput').value.trim();
+    const no = document.getElementById('noInput').value.trim();
+    if(!v){ toast('กรุณาใส่ชื่อก่อนเริ่ม'); return; }
+    if(!room){ toast('กรุณาใส่ห้อง'); return; }
+    if(!no){ toast('กรุณาใส่เลขที่'); return; }
+    STATE.name = v; STATE.room = room; STATE.no = no;
+    STATE.createdAt = STATE.createdAt || new Date().toISOString();
+    await saveState();
+    LOG.event('start', {});
+    document.getElementById('topbar').style.display='flex';
+    document.getElementById('bottomnav').style.display='flex';
+    updateTopbar();
+    navigate('home');
+  });
+}
+
+function renderHomeScreen(){
+  const totalStars = Object.values(STATE.missions).reduce((s,m)=>s+m.stars,0);
+  const nextMission = MISSIONS.find(m=>!missionCompleted(m.id));
+  return `
+    <h1 class="page-title">สวัสดี ${STATE.name} 👋<small>ยศปัจจุบัน: ${rankForXP(STATE.xp)}</small></h1>
+    <div class="grid2">
+      <div class="card card-tight center"><div style="font-size:22px;font-weight:700;color:var(--evidence)">${totalStars}</div><div class="tag">ดาวภารกิจ</div></div>
+      <div class="card card-tight center"><div style="font-size:22px;font-weight:700;color:var(--perm-2)">${STATE.detective.bestAvg?STATE.detective.bestAvg.toFixed(1):"—"}</div><div class="tag">เฉลี่ยนักสืบ /10</div></div>
+    </div>
+    <div class="card">
+      <h2 class="section-title">🎯 ภารกิจถัดไป</h2>
+      ${nextMission ? `
+        <div class="mission-title">${nextMission.name}</div>
+        <p>${nextMission.desc}</p>
+        <button class="btn btn-primary btn-block" id="continueMissionBtn">ไปทำภารกิจ</button>
+      ` : `<p>ทำภารกิจครบทุกภารกิจแล้ว! ลองโหมดนักสืบอิสระเพื่อฝึกฝนต่อ 🎉</p>
+        <button class="btn btn-primary btn-block" id="goDetectiveFromHome">ไปโหมดนักสืบ</button>`}
+    </div>
+    <div class="card">
+      <h2 class="section-title">⚗️ ห้องทดลองอิสระ</h2>
+      <p>สำรวจสารประกอบทุกชนิดได้อย่างอิสระ ไม่มีเวลาจำกัด — ทดสอบวิธีที่ยังไม่เคยลอง รับ +3 XP ทุกครั้ง</p>
+      <button class="btn btn-ghost btn-block" id="goLabFromHome">เข้าห้องทดลอง</button>
+    </div>`;
+}
+function attachHomeHandlers(){
+  const cm = document.getElementById('continueMissionBtn');
+  if(cm) cm.addEventListener('click', ()=>{
+    const nextMission = MISSIONS.find(m=>!missionCompleted(m.id));
+    navigate('missions'); setTimeout(()=>openMission(nextMission.id), 50);
+  });
+  const gd = document.getElementById('goDetectiveFromHome');
+  if(gd) gd.addEventListener('click', ()=>navigate('detective'));
+  const gl = document.getElementById('goLabFromHome');
+  if(gl) gl.addEventListener('click', ()=>navigate('lab'));
+}
+
+function renderLabScreen(){
+  const groups = {alkane:[], alkene:[], alkyne:[], aromatic:[]};
+  MOLECULES.forEach(m=>groups[m.cls].push(m));
+  const groupLabel = {alkane:'แอลเคน', alkene:'แอลคีน', alkyne:'แอลไคน์', aromatic:'แอโรมาติก'};
+  let html = `<h1 class="page-title">ห้องทดลองอิสระ<small>เลือกสารประกอบ แล้วทดสอบได้ทุกวิธี</small></h1>`;
+  html += `<div class="card card-tight">`;
+  Object.keys(groups).forEach(g=>{
+    html += `<div class="tag" style="margin:6px 0 4px;">${groupLabel[g]}</div><div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">`;
+    groups[g].forEach(m=>{
+      html += `<button class="pill pill-${g==='alkene'||g==='alkyne'?'unsat':g} btn-sm" style="cursor:pointer;border:1px solid var(--line);" data-pick="${m.id}">${m.th}</button>`;
+    });
+    html += `</div>`;
+  });
+  html += `</div><div id="labStationArea"></div>`;
+  return html;
+}
+function attachLabHandlers(){
+  document.querySelectorAll('[data-pick]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      startStation({
+        mode:'lab', mystery:false, molId: btn.dataset.pick,
+        allowedTests:['combustion','br2dark','br2light','kmno4'],
+        /* curiosity is rewarded: every test on a molecule the student has not
+           tried that way before is worth XP, so exploring the whole 30×4 grid
+           is progress rather than a detour from the missions */
+        onTest:(mol, testType)=>{
+          const key = mol.id+':'+testType;
+          if(!STATE.explored[key]){
+            STATE.explored[key] = 1;
+            addXP(3);
+            const total = Object.keys(STATE.explored).length;
+            toast(`ค้นพบใหม่! +3 XP (สำรวจแล้ว ${total}/${MOLECULES.length*4})`);
+            updateTopbar();
+          }
+        }
+      });
+      document.getElementById('labStationArea').innerHTML = `<div class="card">${renderStation().replace(/<h1[\s\S]*?<\/h1>/,'')}</div>`;
+      attachStationHandlers(null);
+      safeScrollIntoView(document.getElementById('labStationArea'));
+    });
+  });
+}
+
+function renderDetectiveScreen(){
+  if(!missionCompleted('m7')){
+    return `<h1 class="page-title">โหมดนักสืบอิสระ</h1>
+      <div class="card"><p>ปลดล็อกโหมดนี้โดยทำภารกิจทั้ง 7 ภารกิจให้สำเร็จก่อน เพื่อฝึกใช้หลักฐานทุกช่องทางให้คล่องก่อนเจอคดีแบบสุ่ม</p>
+      <button class="btn btn-primary btn-block" id="backHomeFromDet">กลับหน้าแรก</button></div>`;
+  }
+  // resume an unfinished round, otherwise deal a fresh 30
+  setTimeout(()=>{
+    if(DETECTIVE_ROUND && DETECTIVE_ROUND.idx < DETECTIVE_ROUND.queue.length) renderDetectiveCase();
+    else startDetectiveRound();
+  }, 0);
+  return `<div class="center mt16"><div style="font-size:32px;">🔍</div><p>กำลังเปิดคดี…</p></div>`;
+}
+
+function renderProgressScreen(){
+  const missionStars = Object.values(STATE.missions).reduce((s,m)=>s+m.stars,0);
+  const d = STATE.detective;
+  const explored = Object.keys(STATE.explored).length;
+  const exploreMax = MOLECULES.length*4;
+  const syncState = !CFG.URL ? 'บันทึกในเครื่องเท่านั้น'
+    : (LOG.queue.length ? 'รอส่ง '+LOG.queue.length+' รายการ' : 'ซิงก์ครบแล้ว');
+  return `
+    <h1 class="page-title">ความก้าวหน้า<small>${STATE.name} · ห้อง ${STATE.room} · เลขที่ ${STATE.no}</small></h1>
+    <div class="grid2">
+      <div class="card card-tight center"><div style="font-size:22px;font-weight:700;color:var(--gold)">${STATE.xp}</div><div class="tag">XP รวม</div></div>
+      <div class="card card-tight center"><div style="font-size:22px;font-weight:700;color:var(--evidence)">${missionStars}</div><div class="tag">ดาวภารกิจ</div></div>
+    </div>
+    <div class="card">
+      <h2 class="section-title">🔍 โหมดนักสืบอิสระ</h2>
+      <div class="grid2">
+        <div class="chip">เฉลี่ยรอบล่าสุด<br><b style="color:var(--evidence);font-size:17px;">${d.answered? (d.scoreSum/d.answered).toFixed(1):'—'}/10</b></div>
+        <div class="chip">สถิติดีที่สุด<br><b style="color:var(--gold);font-size:17px;">${d.bestAvg?d.bestAvg.toFixed(1):'—'}/10</b></div>
+      </div>
+      <div class="tag mt8">เล่นจบแล้ว ${d.roundsDone||0} รอบ · ข้อที่ทำไปในรอบปัจจุบัน ${d.answered}/${DETECTIVE_ROUND_SIZE}</div>
+    </div>
+    <div class="card">
+      <h2 class="section-title">⚗️ การสำรวจในห้องทดลอง</h2>
+      <div class="soot-meter"><span class="sm-label">สำรวจ</span>
+        <span class="sm-track"><span class="sm-fill" style="width:${Math.round(explored/exploreMax*100)}%"></span></span>
+        <span class="sm-val">${explored}/${exploreMax}</span></div>
+      <p class="mt8" style="margin-bottom:0;">ทดสอบสารแต่ละชนิดด้วยวิธีใหม่ที่ยังไม่เคยลอง จะได้ +3 XP ทุกครั้ง</p>
+    </div>
+    <div class="card">
+      <h2 class="section-title">📊 การบันทึกข้อมูล</h2>
+      <p>สถานะ: <b style="color:var(--text)">${syncState}</b></p>
+      <div class="grid2">
+        <button class="btn btn-ghost btn-sm" id="exportCsvBtn">Export CSV</button>
+        <button class="btn btn-primary btn-sm" id="syncNowBtn" ${CFG.URL?'':'disabled'}>ส่งข้อมูลตอนนี้</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2 class="section-title">🔄 เริ่มใหม่</h2>
+      <p>ล้างความคืบหน้าทั้งหมดของ "${STATE.name}" บนอุปกรณ์นี้</p>
+      <button class="btn btn-ghost btn-block" id="resetBtn" style="color:var(--acid);">ล้างข้อมูลทั้งหมด</button>
+    </div>`;
+}
+function attachProgressHandlers(){
+  document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
+  const sy = document.getElementById('syncNowBtn');
+  if(sy) sy.addEventListener('click', async ()=>{
+    submitSummary();
+    await LOG.flush();
+    toast(LOG.queue.length ? 'ยังส่งไม่ครบ ระบบจะลองใหม่อัตโนมัติ' : 'ส่งข้อมูลเรียบร้อย ✓');
+    navigate('progress');
+  });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    openSheet(`<div class="sheet-handle"></div>
+      <h2 class="section-title">ยืนยันการล้างข้อมูล?</h2>
+      <p>การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+      <button class="btn btn-block" style="background:var(--acid);color:#fff;" id="confirmResetBtn">ล้างข้อมูลทั้งหมด</button>
+      <button class="btn btn-ghost btn-block mt8" id="cancelResetBtn">ยกเลิก</button>`);
+    document.getElementById('confirmResetBtn').addEventListener('click', async ()=>{
+      STATE = {name:'', room:'', no:'', xp:0, missions:{},
+        detective:{answered:0,correct:0,scoreSum:0,bestAvg:0,roundsDone:0},
+        explored:{}, createdAt:null};
+      await saveState();
+      closeSheet();
+      location.reload();
+    });
+    document.getElementById('cancelResetBtn').addEventListener('click', closeSheet);
+  });
+}
+
+/* ============================================================
+   13. ROUTER
+   ============================================================ */
+function navigate(name){
+  const root = document.getElementById('screen-root');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.nav===name));
+  if(name==='home'){ root.innerHTML = renderHomeScreen(); attachHomeHandlers(); }
+  else if(name==='lab'){ root.innerHTML = renderLabScreen(); attachLabHandlers(); }
+  else if(name==='missions'){ root.innerHTML = renderMissionsScreen(); attachMissionsHandlers(); }
+  else if(name==='detective'){ root.innerHTML = renderDetectiveScreen();
+    const bh = document.getElementById('backHomeFromDet'); if(bh) bh.addEventListener('click',()=>navigate('home')); }
+  else if(name==='progress'){ root.innerHTML = renderProgressScreen(); attachProgressHandlers(); }
+  root.scrollTop = 0;
+  updateTopbar();
+}
+
+/* ============================================================
+   14. INIT
+   ============================================================ */
+async function init(){
+  await loadState();
+  await LOG.load();
+  if(!CFG.SHOW_BADGE){
+    const b = document.getElementById('syncBadge'); if(b) b.style.display='none';
+  }
+  setBadge(!CFG.URL ? 'off' : (LOG.queue.length ? 'pending' : 'ok'));
+
+  // retry any rows stranded by a dropped connection
+  if(CFG.URL){
+    setInterval(()=>{ if(LOG.queue.length) LOG.flush(); }, CFG.RETRY_MS);
+    window.addEventListener('online', ()=>LOG.flush());
+  }
+  // last-chance flush when the student closes the tab
+  window.addEventListener('pagehide', ()=>{
+    if(CFG.URL && LOG.queue.length && navigator.sendBeacon){
+      try{ navigator.sendBeacon(CFG.URL, JSON.stringify({token:CFG.TOKEN, rows:LOG.queue})); }
+      catch(e){ /* best effort only */ }
+    }
+  });
+
+  document.querySelectorAll('.nav-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>navigate(btn.dataset.nav));
+  });
+  if(STATE.name){
+    document.getElementById('topbar').style.display='flex';
+    document.getElementById('bottomnav').style.display='flex';
+    updateTopbar();
+    navigate('home');
+  } else {
+    renderProfileScreen();
+  }
+}
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>
