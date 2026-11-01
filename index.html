@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+<!-- เวอร์ชัน 1.1.1 (WP-06f: ศัพท์ สสวท. แอโรแมติก) · 1.1.0 (WP-05: ภารกิจ 3–4 เปลี่ยนเป็นไซโคลเฮกเซน/เฮกซ์-1-อีน + ขั้นโบนัสเลือกผลิตภัณฑ์) · ก่อนหน้า 1.0.0 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>นักสืบไฮโดรคาร์บอน | Hydrocarbon Sleuth Lab</title>
@@ -556,19 +557,21 @@ const MOLECULES = [
     formula:'C6H14', condensed:'CH₃–(CH₂)₄–CH₃', chain:[1,1,1,1,1], chRatio:6/14 },
   { id:'cyclohexane', th:'ไซโคลเฮกเซน', en:'cyclohexane', cls:'alkane',
     formula:'C6H12', condensed:'วงแหวนอิ่มตัว C6H12', ring:{size:6,doubleEdge:null,aromatic:false}, chRatio:6/12,
-    trap:'ring-satd' },
+    trap:'pair-hexene1' },
   { id:'ethene', th:'เอทีน', en:'ethene (ethylene)', cls:'alkene',
     formula:'C2H4', condensed:'CH₂=CH₂', chain:[2], chRatio:2/4 },
   { id:'propene', th:'โพรพีน', en:'propene', cls:'alkene',
-    formula:'C3H6', condensed:'CH₂=CH–CH₃', chain:[2,1], chRatio:3/6,
-    trap:'pair-cyclopropane' },
+    formula:'C3H6', condensed:'CH₂=CH–CH₃', chain:[2,1], chRatio:3/6 },
   { id:'butene1', th:'บิวท์-1-อีน', en:'but-1-ene', cls:'alkene',
     formula:'C4H8', condensed:'CH₂=CH–CH₂–CH₃', chain:[2,1,1], chRatio:4/8 },
   { id:'pentene1', th:'เพนท์-1-อีน', en:'pent-1-ene', cls:'alkene',
     formula:'C5H10', condensed:'CH₂=CH–CH₂–CH₂–CH₃', chain:[2,1,1,1], chRatio:5/10 },
+  /* WP-05b (ครูตัดสิน 2026-10-21): คงไซโคลโพรเพนไว้ แล้วติดป้าย "ส่วนขยาย" (ext:true)
+     ผลทดสอบ Br₂ ในที่มืด (ไม่เปลี่ยนแปลง) ตามคู่มือครู แบบฝึกหัดข้อ 6 หน้า 93–94 ·
+     ความเครียดของวง 60° ตามตำราบท 1 หน้า 10 · chemguide.co.uk ระบุว่าในความเป็นจริงเปิดวงเติม Br₂ ได้ในที่มืด
+     ไม่ใช้ใน MISSIONS (ภารกิจ 3–4 ใช้ไซโคลเฮกเซน/เฮกซ์-1-อีน) */
   { id:'cyclopropane', th:'ไซโคลโพรเพน', en:'cyclopropane', cls:'alkane',
-    formula:'C3H6', condensed:'วงแหวนอิ่มตัว C3H6', ring:{size:3,doubleEdge:null,aromatic:false}, chRatio:3/6,
-    trap:'pair-propene' },
+    formula:'C3H6', condensed:'วงแหวนอิ่มตัว C3H6', ring:{size:3,doubleEdge:null,aromatic:false}, chRatio:3/6, ext:true },
   { id:'cyclohexene', th:'ไซโคลเฮกซีน', en:'cyclohexene', cls:'alkene',
     formula:'C6H10', condensed:'วงแหวนมีพันธะคู่ C6H10', ring:{size:6,doubleEdge:0,aromatic:false}, chRatio:6/10 },
   { id:'ethyne', th:'อีไทน์', en:'ethyne (acetylene)', cls:'alkyne',
@@ -580,7 +583,7 @@ const MOLECULES = [
   { id:'hexyne2', th:'เฮกซ์-2-ไอน์', en:'hex-2-yne', cls:'alkyne',
     formula:'C6H10', condensed:'CH₃–C≡C–CH₂–CH₂–CH₃', chain:[1,3,1,1,1], chRatio:6/10, terminalTriple:false },
   { id:'benzene', th:'เบนซีน', en:'benzene', cls:'aromatic',
-    formula:'C6H6', condensed:'วงแหวนอะโรมาติก C6H6', ring:{size:6,doubleEdge:null,aromatic:true}, chRatio:6/6,
+    formula:'C6H6', condensed:'วงแหวนแอโรแมติก C6H6', ring:{size:6,doubleEdge:null,aromatic:true}, chRatio:6/6,
     hasAlkylChain:false },
   { id:'toluene', th:'โทลูอีน (เมทิลเบนซีน)', en:'toluene (methylbenzene)', cls:'aromatic',
     formula:'C7H8', condensed:'C6H5–CH₃', ring:{size:6,doubleEdge:null,aromatic:true}, branches:[{label:'CH₃',atRingIndex:0}], chRatio:7/8,
@@ -597,7 +600,8 @@ const MOLECULES = [
   { id:'butene2', th:'บิวท์-2-อีน', en:'but-2-ene', cls:'alkene',
     formula:'C4H8', condensed:'CH₃–CH=CH–CH₃', chain:[1,2,1], chRatio:4/8 },
   { id:'hexene1', th:'เฮกซ์-1-อีน', en:'hex-1-ene', cls:'alkene',
-    formula:'C6H12', condensed:'CH₂=CH–(CH₂)₃–CH₃', chain:[2,1,1,1,1], chRatio:6/12 },
+    formula:'C6H12', condensed:'CH₂=CH–(CH₂)₃–CH₃', chain:[2,1,1,1,1], chRatio:6/12,
+    trap:'pair-cyclohexane' },
   { id:'cyclopentene', th:'ไซโคลเพนทีน', en:'cyclopentene', cls:'alkene',
     formula:'C5H8', condensed:'วงแหวนมีพันธะคู่ C5H8', ring:{size:5,doubleEdge:0,aromatic:false}, chRatio:5/8 },
   { id:'butyne1', th:'บิวท์-1-ไอน์', en:'but-1-yne', cls:'alkyne',
@@ -614,12 +618,15 @@ const MOLECULES = [
     hasAlkylChain:true },
 ];
 
+/* ป้าย "ส่วนขยาย" (WP-05b): สารนอกกิจกรรมหลักของคู่มือครู ที่ผลในเกมเป็นการจำลองแบบง่าย */
+const EXT_NOTE = 'ส่วนขยาย — ผลทดสอบในเกมเป็นไปตามแบบฝึกหัดท้ายบทของคู่มือครู วงสามเหลี่ยมมีความเครียดสูง (มุมพันธะ 60°) จึงเปิดวงได้ง่ายกว่าแอลเคนทั่วไป (ตำราบท 1 หน้า 10) เกินกว่าที่เกมจำลอง';
+
 function getMolecule(id){ return MOLECULES.find(m=>m.id===id); }
 
 /* ============================================================
    2. REACTION ENGINE
    Every rule traceable to the teacher's guide decision table:
-   สารประกอบไฮโดรคาร์บอน -> แอลเคน / แอลคีนหรือแอลไคน์ / แอโรมาติก
+   สารประกอบไฮโดรคาร์บอน -> แอลเคน / แอลคีนหรือแอลไคน์ / แอโรแมติก
    via ฟอกจางสีโบรมีน(มืด,สว่าง) + ฟอกจางสีKMnO4
    ============================================================ */
 function testCombustion(mol, o2Level){
@@ -690,7 +697,7 @@ function runTest(mol, testType, opts){
 const CLASS_LABELS = {
   alkane: 'แอลเคน',
   unsat: 'แอลคีน หรือ แอลไคน์',
-  aromatic: 'แอโรมาติกไฮโดรคาร์บอน'
+  aromatic: 'แอโรแมติกไฮโดรคาร์บอน'
 };
 
 // Expected categorical pattern per class, used to check consistency
@@ -768,7 +775,20 @@ function renderChain(mol, W, H){
     const order = mol.chain[i];
     svg += bondSVG(a,b,order,false);
   }
-  // terminal end caps (small stub to suggest continuing bond to H, subtle)
+  // substituents (WP-05, product-choice step): mol.subs = [{at:carbonIndex,label}]
+  // even carbons sit low in the zig-zag, odd carbons high, so the stub points away from the chain
+  const perVertex = {};
+  (mol.subs||[]).forEach(sb=>{
+    const a = pts[sb.at];
+    const k = perVertex[sb.at] = (perVertex[sb.at]||0)+1;
+    const total = mol.subs.filter(x=>x.at===sb.at).length;
+    const down = sb.at%2===0 ? 1 : -1;
+    const ang = total>1 ? (k===1 ? -0.55 : 0.55) : 0;   // two groups on one carbon fan out
+    const dx = Math.sin(ang), dy = down*Math.cos(ang);
+    const bx = a.x + dx*22, by = a.y + dy*22;
+    svg += bondSVG(a,{x:bx,y:by},1,false);
+    svg += `<text x="${a.x + dx*34}" y="${a.y + dy*34 + 4}" fill="var(--paper)" font-size="11" font-family="Chakra Petch, sans-serif" text-anchor="middle">${sb.label}</text>`;
+  });
   return svg;
 }
 
@@ -792,9 +812,16 @@ function renderRing(mol, W, H){
     svg += `<circle cx="${cx}" cy="${cy}" r="${r*0.55}" class="skeletal-line arom" stroke-width="2" fill="none"/>`;
   }
   const branches = mol.branches || (mol.branch ? [mol.branch] : []);
+  const seen = {};
   branches.forEach(br=>{
     const a = pts[br.atRingIndex];
-    const dir = {x:a.x-cx, y:a.y-cy};
+    let dir = {x:a.x-cx, y:a.y-cy};
+    const same = branches.filter(x=>x.atRingIndex===br.atRingIndex).length;
+    if(same>1){   // two groups on one ring carbon: rotate each ±0.45 rad
+      const k = seen[br.atRingIndex] = (seen[br.atRingIndex]||0)+1;
+      const t = k===1 ? -0.45 : 0.45;
+      dir = {x: dir.x*Math.cos(t) - dir.y*Math.sin(t), y: dir.x*Math.sin(t) + dir.y*Math.cos(t)};
+    }
     const len = Math.hypot(dir.x,dir.y) || 1;
     const bx = a.x + (dir.x/len)*24, by = a.y + (dir.y/len)*24;
     svg += bondSVG(a,{x:bx,y:by},1,false);
@@ -836,6 +863,7 @@ function moleculeCardHTML(mol, opts){
         <div class="mol-name-en">${mol.en}</div>
         <div class="mol-formula">${mol.formula}</div>
         <div class="mol-condensed">${mol.condensed}</div>
+        ${mol.ext ? `<div class="tag" style="margin-top:6px;"><b style="color:var(--gold);">ส่วนขยาย</b> · ${EXT_NOTE.replace('ส่วนขยาย — ','')}</div>` : ''}
       `}
     </div>`;
 }
@@ -1389,7 +1417,7 @@ function renderEvidenceBoardHTML(){
       const consistent = isConsistent(cls, ev);
       let hint = '';
       if(cls==='aromatic' && ev.br2light){
-        hint = 'ใช้เขม่าจากการเผาไหม้ช่วยยืนยัน (วงอะโรมาติกมักมีเขม่ามาก)';
+        hint = 'ใช้เขม่าจากการเผาไหม้ช่วยยืนยัน (วงแอโรแมติกมักมีเขม่ามาก)';
       }
       html += `<div class="suspect ${consistent? (hasAny?'possible':''):'ruled-out'}">
         <div class="sicon">${consistent?'🔬':'✖️'}</div>
@@ -1469,12 +1497,154 @@ function handleStationTest(testType){
   });
 }
 
+/* ============================================================
+   PRODUCT-CHOICE BONUS (WP-05, curriculum 12.7)
+   After a case is closed the player may pick the organic product of a test
+   they actually ran. Bonus XP only — never touches the detective score.
+   Offered only where the curriculum fixes ONE product with no ambiguity:
+   - Br2 + alkene (addition, vicinal dibromide)   — คู่มือครู หน้า 59, 61–62
+   - Br2/light + C2H6, cyclopentane, cyclohexane, toluene's CH3 (substitution
+     gives R–Br + HBr; the Br position is unique because all H are equivalent,
+     or benzylic)                                  — ตำราบท 4 หน้า 46, บท 6 หน้า 21
+   - KMnO4 + alkene (cold, dilute → diol)          — ตำราบท 4 หน้า 46; คู่มือครู หน้า 64–65
+   Alkynes are skipped on purpose (extent of addition/oxidation is extension
+   content), as are alkanes with non-equivalent H and ring-brominated arenes.
+   ============================================================ */
+const BR_SUBST_OK = ['ethane','cyclopentane','cyclohexane','toluene'];
+
+function productSpec(mol, testType){
+  const isAlkene = mol.cls==='alkene';
+  const ringAlkene = isAlkene && mol.ring;
+  const k = isAlkene && mol.chain ? mol.chain.indexOf(2) : -1;       // double-bond position (chain)
+  const n = mol.chain ? mol.chain.length+1 : 0;
+  // build option drawings ------------------------------------------------
+  const chainOpt = (bonds, subs)=>({chain:bonds, subs});
+  const ringOpt = (size, dbl, br, arom)=>({ring:{size, doubleEdge:dbl, aromatic:!!arom}, branches:br});
+  const sat = mol.chain ? mol.chain.map((b,i)=> i===k ? 1 : b) : null;
+  const B = (label, at)=>({label, atRingIndex:at});
+  let correct, wrong, why;
+
+  if((testType==='br2dark' || testType==='br2light') && isAlkene){
+    const br = 'Br';
+    if(ringAlkene){
+      const sz = mol.ring.size;
+      correct = ringOpt(sz,null,[B(br,0),B(br,1)]);
+      wrong = [ ringOpt(sz,null,[B(br,0),B(br,0)]),            // both Br on one carbon
+                ringOpt(sz,0,[B(br,2)]),                       // substitution: double bond kept
+                ringOpt(sz,null,[B(br,0),B(br,2)]) ];          // Br not on the former C=C
+    } else {
+      correct = chainOpt(sat,[{at:k,label:br},{at:k+1,label:br}]);
+      wrong = [ chainOpt(sat,[{at:k,label:br},{at:k,label:br}]),
+                chainOpt(mol.chain,[{at:(k+1<n-1 ? n-1 : k+1),label:br}]) ];
+      if(k+2<=n-1) wrong.push(chainOpt(sat,[{at:k,label:br},{at:k+2,label:br}]));
+      else if(k-1>=0) wrong.push(chainOpt(sat,[{at:k-1,label:br},{at:k+1,label:br}]));
+    }
+    why = 'Br₂ <b>เติม</b>ที่พันธะคู่: พันธะ π ขาด แล้ว Br ไปติดที่คาร์บอน<b>ทั้งสอง</b>ของพันธะคู่เดิม ได้ผลิตภัณฑ์ชนิดเดียวและไม่มีผลิตภัณฑ์พลอยได้ (จึงไม่มีแก๊ส HBr ทำให้ลิตมัสไม่เปลี่ยนสี) — ส่วนโครงสร้างที่ยังมีพันธะคู่อยู่และมี Br 1 อะตอม คือผลของการ<i>แทนที่</i> ซึ่งไม่ใช่สิ่งที่แอลคีนทำกับ Br₂';
+  } else if(testType==='br2light' && BR_SUBST_OK.indexOf(mol.id)>=0){
+    if(mol.id==='toluene'){
+      correct = ringOpt(6,null,[B('CH₂Br',0)],true);
+      wrong = [ ringOpt(6,null,[B('CH₃',0),B('Br',1)],true),   // Br on the ring
+                ringOpt(6,null,[B('CH₂OH',0)],true) ];
+      why = 'ในที่สว่าง Br₂ <b>แทนที่ H ที่หมู่ CH₃</b> ข้างวง ได้ C₆H₅CH₂Br + HBr ส่วนพันธะในวงเบนซีนไม่เกิดปฏิกิริยาการเติมหรือการแทนที่ภายใต้ภาวะนี้';
+    } else if(mol.ring){
+      const sz = mol.ring.size;
+      correct = ringOpt(sz,null,[B('Br',0)]);
+      wrong = [ ringOpt(sz,null,[B('OH',0)]),
+                ringOpt(sz,null,[B('Br',0),B('Br',1)]),
+                ringOpt(sz,0,[]) ];
+      why = 'ไซโคลแอลเคนอิ่มตัวทำปฏิกิริยากับ Br₂ ในที่สว่างแบบ<b>แทนที่</b>: H หนึ่งอะตอมถูก Br แทน ได้โบรโมไซโคลแอลเคน + HBr (ลิตมัสเปลี่ยนเป็นแดง) — ไม่เกิดการเติมเพราะไม่มีพันธะคู่';
+    } else {   // ethane
+      correct = chainOpt([1],[{at:1,label:'Br'}]);
+      wrong = [ chainOpt([1],[{at:1,label:'OH'}]),
+                chainOpt([2],[]),
+                chainOpt([2],[{at:1,label:'Br'}]) ];
+      why = 'แอลเคนทำปฏิกิริยากับ Br₂ ในที่สว่างแบบ<b>แทนที่</b>: H หนึ่งอะตอมถูก Br แทน ได้ CH₃CH₂Br + HBr (ลิตมัสเปลี่ยนเป็นแดง)';
+    }
+  } else if(testType==='kmno4' && isAlkene){
+    const oh = 'OH';
+    if(ringAlkene){
+      const sz = mol.ring.size;
+      correct = ringOpt(sz,null,[B(oh,0),B(oh,1)]);
+      wrong = [ ringOpt(sz,null,[B(oh,0)]),
+                ringOpt(sz,null,[B(oh,0),B(oh,0)]),
+                ringOpt(sz,0,[]) ];
+    } else {
+      correct = chainOpt(sat,[{at:k,label:oh},{at:k+1,label:oh}]);
+      wrong = [ chainOpt(sat,[{at:k,label:oh}]),
+                chainOpt(sat,[{at:k,label:oh},{at:k,label:oh}]),
+                chainOpt(mol.chain,[]) ];
+    }
+    why = 'KMnO₄ (เย็น เจือจาง ไม่ให้ความร้อน) ออกซิไดส์แอลคีนเป็น<b>ไดออล</b>: เติม OH ที่คาร์บอน<b>ทั้งสอง</b>ของพันธะคู่ ส่วน KMnO₄ ถูกรีดิวซ์เป็น MnO₂ (ตะกอนสีน้ำตาล) จึงสีม่วงจางหาย · ถ้าสารยังเป็นแอลคีนเดิม สีม่วงจะไม่จาง';
+  } else {
+    return null;
+  }
+  const options = [{o:correct, ok:true}].concat(wrong.map(w=>({o:w, ok:false})));
+  for(let i=options.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [options[i],options[j]]=[options[j],options[i]]; }
+  const tname = testType==='kmno4' ? 'KMnO₄' : (testType==='br2dark' ? 'Br₂ ในที่มืด' : 'Br₂ ในที่สว่าง');
+  return { testType, tname, options, why };
+}
+
+/* pick the most recent test the player ran that has a defined product */
+function pickProductSpec(){
+  const ev = STATION.evidence || {};
+  const order = Object.keys(ev).filter(t=>ev[t] && ev[t].reacts);
+  for(let i=order.length-1;i>=0;i--){
+    const spec = productSpec(STATION.mol, order[i]);
+    if(spec) return spec;
+  }
+  return null;
+}
+
+function productBonusButtonHTML(){
+  return STATION._productSpec ? `<button class="btn btn-ghost btn-block mt12" id="stationBonusBtn">🧪 โบนัส: ผลิตภัณฑ์ที่ได้คืออะไร? (+5 XP)</button>` : '';
+}
+
+/* wire the bonus button inside a verdict sheet; onDone() continues the normal flow */
+function attachProductBonus(onDone){
+  const btn = document.getElementById('stationBonusBtn');
+  if(btn) btn.addEventListener('click', ()=> showProductBonus(STATION._productSpec, onDone));
+}
+
+function showProductBonus(spec, onDone){
+  const mol = STATION.mol;
+  const letters = ['ก','ข','ค','ง'];
+  openSheet(`
+    <div class="sheet-handle"></div>
+    <h2 class="section-title">🧪 โบนัส: ผลิตภัณฑ์อินทรีย์</h2>
+    <p>${mol.th} ทำปฏิกิริยากับ <b>${spec.tname}</b> — ผลิตภัณฑ์อินทรีย์คือโครงสร้างใด?<br><span class="tag">ไม่หักคะแนนสืบ · ตอบถูกได้ +5 XP</span></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      ${spec.options.map((op,i)=>`<button class="btn btn-ghost" data-prod="${i}" style="flex-direction:column;padding:8px;">
+        <span style="font-weight:700;">${letters[i]}</span>${moleculeSVG(op.o, 130)}</button>`).join('')}
+    </div>`);
+  document.querySelectorAll('[data-prod]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const pick = spec.options[+btn.dataset.prod];
+      const right = pick.ok;
+      if(right) addXP(5);
+      LOG.event('product', {
+        mol: mol.id, formula: mol.formula, test: spec.testType,
+        correct: right?1:0, mode: STATION.cfg.mode || ''
+      });
+      const ans = spec.options.findIndex(x=>x.ok);
+      openSheet(`
+        <div class="sheet-handle"></div>
+        <div class="center" style="font-size:36px;">${right?'✅':'🧐'}</div>
+        <h2 class="section-title center" style="justify-content:center;">${right?'ถูกต้อง! +5 XP':'ยังไม่ใช่'}</h2>
+        <div class="center">${moleculeSVG(spec.options[ans].o, 150)}</div>
+        <div class="center tag">คำตอบที่ถูกคือข้อ ${letters[ans]}</div>
+        <div class="why-box mt12">${spec.why}</div>
+        <button class="btn btn-primary btn-block mt16" id="productDoneBtn">ไปต่อ</button>`);
+      document.getElementById('productDoneBtn').addEventListener('click', onDone);
+    });
+  });
+}
+
 function openAccuseSheet(afterAccuse){
   STATION._afterAccuse = afterAccuse;
   const options = [
     {cls:'alkane', label:'แอลเคน', desc:'สารประกอบอิ่มตัว'},
     {cls:'unsat', label:'แอลคีน หรือ แอลไคน์', desc:'มีพันธะคู่หรือพันธะสาม'},
-    {cls:'aromatic', label:'แอโรมาติกไฮโดรคาร์บอน', desc:'มีวงเบนซีน'}
+    {cls:'aromatic', label:'แอโรแมติกไฮโดรคาร์บอน', desc:'มีวงเบนซีน'}
   ];
   openSheet(`
     <div class="sheet-handle"></div>
@@ -1506,6 +1676,7 @@ function caseScore10(correct, tests){
 function resolveAccusation(correct, afterAccuse){
   closeSheet();
   const mol = STATION.mol;
+  STATION._productSpec = pickProductSpec();   // null when no test run has a defined product
 
   /* Detective mode: one shot per case. A wrong call is not a dead end but it
      is final — the answer is revealed with its reasoning and play moves on. */
@@ -1525,12 +1696,15 @@ function resolveAccusation(correct, afterAccuse){
       <div class="center tag" style="margin-bottom:6px;">ใช้เวลา ${secs.toFixed(1)} วินาที · ทดสอบ ${STATION.testCount} ครั้ง</div>
       ${moleculeCardHTML(mol,{size:120})}
       <div class="why-box mt12">${explainWhy(mol)}</div>
+      ${productBonusButtonHTML()}
       <button class="btn btn-primary btn-block mt16" id="stationContinueBtn">ข้อถัดไป →</button>
     `);
-    document.getElementById('stationContinueBtn').addEventListener('click', ()=>{
+    const goNext = ()=>{
       closeSheet();
       if(afterAccuse) afterAccuse(correct, score, STATION.testCount, mol, secs);
-    });
+    };
+    document.getElementById('stationContinueBtn').addEventListener('click', goNext);
+    attachProductBonus(goNext);
     return;
   }
 
@@ -1544,12 +1718,15 @@ function resolveAccusation(correct, afterAccuse){
       ${moleculeCardHTML(mol,{size:120})}
       <div class="mt12">${'⭐'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
       <div class="why-box mt12">${explainWhy(mol)}</div>
+      ${productBonusButtonHTML()}
       <button class="btn btn-primary btn-block mt16" id="stationContinueBtn">ไปต่อ</button>
     `);
-    document.getElementById('stationContinueBtn').addEventListener('click', ()=>{
+    const goNext = ()=>{
       closeSheet();
       if(afterAccuse) afterAccuse(true, stars, STATION.testCount, mol);
-    });
+    };
+    document.getElementById('stationContinueBtn').addEventListener('click', goNext);
+    attachProductBonus(goNext);
   } else {
     openSheet(`
       <div class="sheet-handle"></div>
@@ -1563,6 +1740,9 @@ function resolveAccusation(correct, afterAccuse){
 }
 
 function explainWhy(mol){
+  return explainWhyCore(mol) + (mol.ext ? `<div class="tag" style="margin-top:8px;"><b style="color:var(--gold);">ส่วนขยาย</b> · ${EXT_NOTE.replace('ส่วนขยาย — ','')}</div>` : '');
+}
+function explainWhyCore(mol){
   const g = molClassGroup(mol);
   if(g==='unsat'){
     return `${mol.th} มีพันธะคู่หรือพันธะสาม จึงเกิด <b>ปฏิกิริยาการเติม</b> กับ Br₂ ได้ทั้งในที่มืดและที่สว่างทันที และฟอกจางสี KMnO₄ ได้ (ออกซิไดส์เป็น ${testKMnO4(mol).product || 'สารประกอบใหม่'})`;
@@ -1586,12 +1766,12 @@ const MISSIONS = [
     insight:'ปริมาณเขม่าไม่ได้ขึ้นกับความอิ่มตัวของสารเพียงอย่างเดียว แต่ขึ้นกับปริมาณแก๊สออกซิเจนด้วย แม้แต่บิวเทน (แอลเคน) ก็มีเขม่ามากได้ถ้าออกซิเจนไม่พอ และโพรไพน์ (แอลไคน์) ก็เผาไหม้ค่อนข้างสะอาดได้ถ้าออกซิเจนมากพอ' },
   { id:'m3', type:'observe', title:'ภารกิจ 3', name:'ทดสอบในที่มืด',
     desc:'ลองหยดสารละลายโบรมีนในที่มืดกับสารต่างชนิด',
-    molIds:['ethane','propene','ethyne','cyclopropane'], allowedTests:['br2dark'],
-    insight:'ในที่มืด มีเพียงสารที่มีพันธะคู่หรือพันธะสาม (แอลคีน/แอลไคน์) เท่านั้นที่ฟอกจางสีโบรมีนได้ทันที (ปฏิกิริยาการเติม) ข้อสังเกตที่น่าสนใจ: ไซโคลโพรเพนมีสูตรโมเลกุล C₃H₆ เหมือนโพรพีนเป๊ะ แต่<b>ไม่</b>ทำปฏิกิริยาในที่มืด! สูตรโมเลกุลอย่างเดียวบอกชนิดสารไม่ได้ ต้องดูโครงสร้างจริง' },
+    molIds:['ethane','hexene1','ethyne','cyclohexane'], allowedTests:['br2dark'],
+    insight:'ในที่มืด มีเพียงสารที่มีพันธะคู่หรือพันธะสาม (แอลคีน/แอลไคน์) เท่านั้นที่ฟอกจางสีโบรมีนได้ทันที (ปฏิกิริยาการเติม) ข้อสังเกตที่น่าสนใจ: ไซโคลเฮกเซนกับเฮกซ์-1-อีนมีสูตรโมเลกุล C₆H₁₂ เหมือนกันเป๊ะ (เป็นไอโซเมอร์กัน) แต่ไซโคลเฮกเซนซึ่งอิ่มตัว<b>ไม่</b>ทำปฏิกิริยาในที่มืด ส่วนเฮกซ์-1-อีนจางสีทันที! สูตรโมเลกุลอย่างเดียวบอกชนิดสารไม่ได้ ต้องดูโครงสร้างจริง' },
   { id:'m4', type:'observe', title:'ภารกิจ 4', name:'แสงเปิดเผยความจริง',
     desc:'ทดสอบสารชุดเดิมอีกครั้ง แต่คราวนี้ในที่สว่าง พร้อมกระดาษลิตมัส',
-    molIds:['ethane','propene','cyclopropane','toluene','benzene'], allowedTests:['br2light'],
-    insight:'ในที่สว่าง ไซโคลโพรเพนกลับทำปฏิกิริยา (แบบแทนที่ ช้าๆ เหมือนแอลเคน) นี่คือหลักฐานที่ยืนยันว่ามันคือแอลเคนวงแหวน ไม่ใช่แอลคีน ส่วนโพรพีนยังคงเติมโบรมีนได้เร็วเหมือนเดิมและไม่ปล่อยแก๊สกรด ขณะที่โทลูอีนทำปฏิกิริยาแทนที่ช้าๆ ที่หมู่ CH₃ แต่เบนซีนล้วนไม่ทำปฏิกิริยาเลย' },
+    molIds:['ethane','hexene1','cyclohexane','toluene','benzene'], allowedTests:['br2light'],
+    insight:'ในที่สว่าง ไซโคลเฮกเซนกลับทำปฏิกิริยา (แบบแทนที่ ช้าๆ เหมือนแอลเคน) นี่คือหลักฐานที่ยืนยันว่ามันคือแอลเคนวงแหวน ไม่ใช่แอลคีน ส่วนเฮกซ์-1-อีนยังคงเติมโบรมีนได้เร็วเหมือนเดิมและไม่ปล่อยแก๊สกรด ขณะที่โทลูอีนทำปฏิกิริยาแทนที่ช้าๆ ที่หมู่ CH₃ แต่เบนซีนล้วนไม่ทำปฏิกิริยาเลย' },
   { id:'m5', type:'observe', title:'ภารกิจ 5', name:'สีม่วงจางหาย',
     desc:'ทดสอบด่างทับทิม (KMnO₄) กับแอลไคน์ปลายสายและกลางสาย',
     molIds:['pentyne1','hexyne2','hexane'], allowedTests:['kmno4'],
@@ -1600,7 +1780,7 @@ const MISSIONS = [
     desc:'ระบุตัวอย่างลึกลับจากวงแหวนสองชนิด โดยใช้หลักฐานทุกช่องทาง',
     pool:['cyclohexane','benzene'], stars:3 },
   { id:'m7', type:'case', title:'ภารกิจ 7', name:'ผู้เชี่ยวชาญไฮโดรคาร์บอน',
-    desc:'คดีที่ยากที่สุด: แยกแอโรมาติกที่มีหมู่แอลคิลออกจากแอลเคนธรรมดา',
+    desc:'คดีที่ยากที่สุด: แยกแอโรแมติกที่มีหมู่แอลคิลออกจากแอลเคนธรรมดา',
     pool:['toluene','pentane','hexane'], stars:5 }
 ];
 
@@ -2066,13 +2246,13 @@ function attachHomeHandlers(){
 function renderLabScreen(){
   const groups = {alkane:[], alkene:[], alkyne:[], aromatic:[]};
   MOLECULES.forEach(m=>groups[m.cls].push(m));
-  const groupLabel = {alkane:'แอลเคน', alkene:'แอลคีน', alkyne:'แอลไคน์', aromatic:'แอโรมาติก'};
+  const groupLabel = {alkane:'แอลเคน', alkene:'แอลคีน', alkyne:'แอลไคน์', aromatic:'แอโรแมติก'};
   let html = `<h1 class="page-title">ห้องทดลองอิสระ<small>เลือกสารประกอบ แล้วทดสอบได้ทุกวิธี</small></h1>`;
   html += `<div class="card card-tight">`;
   Object.keys(groups).forEach(g=>{
     html += `<div class="tag" style="margin:6px 0 4px;">${groupLabel[g]}</div><div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">`;
     groups[g].forEach(m=>{
-      html += `<button class="pill pill-${g==='alkene'||g==='alkyne'?'unsat':g} btn-sm" style="cursor:pointer;border:1px solid var(--line);" data-pick="${m.id}">${m.th}</button>`;
+      html += `<button class="pill pill-${g==='alkene'||g==='alkyne'?'unsat':g} btn-sm" style="cursor:pointer;border:1px solid var(--line);" data-pick="${m.id}">${m.th}${m.ext?' <span class="tag">(ส่วนขยาย)</span>':''}</button>`;
     });
     html += `</div>`;
   });
